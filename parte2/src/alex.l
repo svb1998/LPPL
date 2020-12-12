@@ -68,6 +68,11 @@ return		{ retornar (RETURN_);   }
 {com_multi}		{ if (verbosidad) ECHO; }
 {id}		{ retornar (ID_);   }
 <<EOF>>	{if (verbosidad) {fprintf(stdout, "\n");}return 0;}
+
+
+{numero}     { yylval.cent  = atoi(yytext);   retornar(CTE_); }
+{id} { yylval.ident = strdup(yytext); retornar(ID_);  }
+
 .              { yyerror("Caracter desconocido"); }
 
 %%
