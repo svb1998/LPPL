@@ -383,13 +383,13 @@ struct yy_trans_info
 static const flex_int16_t yy_accept[93] =
     {   0,
         0,    0,   45,   43,    2,    1,   20,   43,    7,    8,
-        5,    3,   26,    4,   43,    6,   39,   25,   10,    9,
+        5,    3,   26,    4,   43,    6,   41,   25,   10,    9,
        11,   42,   21,   22,   42,   42,   42,   42,   42,   42,
        42,   42,   42,   23,   43,   24,    2,   15,   18,   16,
-       17,   39,    0,    0,   39,   39,   12,   14,   13,   42,
+       17,   41,    0,    0,   41,   41,   12,   14,   13,   42,
        42,   36,   42,   42,   42,   31,   42,   42,   42,   42,
-       42,   19,    0,    0,    0,   40,   39,   42,   42,   42,
-       33,   27,   42,   42,   42,   42,   42,   41,   28,   32,
+       42,   19,    0,    0,    0,   39,   41,   42,   42,   42,
+       33,   27,   42,   42,   42,   42,   42,   40,   28,   32,
        42,   42,   34,   42,   29,   42,   30,   35,   42,   37,
        38,    0
 
@@ -509,8 +509,8 @@ static const flex_int16_t yy_chk[150] =
 static const flex_int32_t yy_rule_can_match_eol[45] =
     {   0,
 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    1, 0, 0, 0, 0,     };
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 
+    0, 0, 0, 0, 0,     };
 
 static yy_state_type yy_last_accepting_state;
 static char *yy_last_accepting_cpos;
@@ -1019,38 +1019,38 @@ YY_RULE_SETUP
 { retornar (RETURN_);   }
 	YY_BREAK
 case 39:
+/* rule 39 can match eol */
 YY_RULE_SETUP
 #line 66 "src/alex.l"
-{ retornar (CTE_);   }
+{ if (verbosidad) ECHO; }
 	YY_BREAK
 case 40:
-/* rule 40 can match eol */
 YY_RULE_SETUP
 #line 67 "src/alex.l"
 { if (verbosidad) ECHO; }
 	YY_BREAK
+case YY_STATE_EOF(INITIAL):
+#line 68 "src/alex.l"
+{if (verbosidad) {fprintf(stdout, "\n");}return 0;}
+	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 68 "src/alex.l"
-{ if (verbosidad) ECHO; }
+#line 71 "src/alex.l"
+{ yylval.cent  = atoi(yytext);   retornar(CTE_); }
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 69 "src/alex.l"
-{ retornar (ID_);   }
-	YY_BREAK
-case YY_STATE_EOF(INITIAL):
-#line 70 "src/alex.l"
-{if (verbosidad) {fprintf(stdout, "\n");}return 0;}
+#line 72 "src/alex.l"
+{ yylval.ident = strdup(yytext); retornar(ID_);  }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 71 "src/alex.l"
+#line 74 "src/alex.l"
 { yyerror("Caracter desconocido"); }
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 73 "src/alex.l"
+#line 76 "src/alex.l"
 ECHO;
 	YY_BREAK
 #line 1057 "alex.c"
@@ -2027,6 +2027,6 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 73 "src/alex.l"
+#line 76 "src/alex.l"
 
 

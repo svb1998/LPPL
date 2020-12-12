@@ -34,7 +34,7 @@ int main (int argc, char **argv)
       yyparse ();
       if (numErrores > 0) 
         fprintf(stderr,"\nNumero de errores:      %d\n", numErrores);
-      if(verbosidad == TRUE)
+      if(verTdS == TRUE)
         mostrarTdS();
 
     }   

@@ -8,6 +8,7 @@
 #define FALSE 0
 #define TALLA_TIPO_SIMPLE 1
 #define TALLA_SEGENLACES 2
+#define GLOBAL 0
 
 /************************************* Variables externas definidas en el AL */
 extern int yylex();
@@ -26,6 +27,13 @@ extern int verTdS;
 /***************************** Variables externas definidas en las librer´ıas */
 extern int dvar; /* Desplazamiento en el Segmento de Variables */
 extern int niv; /* Nivel de anidamiento "global" o "local" */
+
+/************************************************ Struct para las expresions */
+typedef struct exp {
+    int v;
+    int t;
+    int valid;
+} EXP;
 
 #endif  /* _HEADER_H */
 /*****************************************************************************/

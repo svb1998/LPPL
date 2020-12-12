@@ -5,52 +5,107 @@
 #include <stdio.h>
 #include <string.h>
 #include "header.h"
+#include "libtds.h"
 %}
 
 
 %union {
 	char* ident;
 	int cent;
+	EXP exp;
 }
 
-%token CTE_ 
+%token <cent> CTE_ 
 %token SUMA_ RESTA_ MULTI_ DIV_ 
 %token ASIGNA_ MENORQ_ MAYORQ_ MENORIG_ MAYORIG_ IGUAL_ DISTINTO_
 %token INCREMENTO_ DECREMENTO_
 %token AND_ OR_ NEGACION_
 %token OPAR_ CPAR_ OCOR_ CCOR_ OLLAVE_ CLLAVE_ 
 %token PUNTCOMA_ COMA_
-%token INT_ BOOL_ TRUE_ FALSE_
+%token INT_ BOOL_ 
+%token TRUE_ FALSE_
 %token IF_ ELSE_ FOR_ READ_ PRINT_ DO_ WHILE_ RETURN_
-%token ID_
+%token <ident> ID_
+
+
+
+%type <cent> tipoSimple
+%type <cent> operadorLogico operadorIgualdad operadorRelacional
+
+%type <exp> expresion expresionIgualdad expresionAditiva listaDeclaraciones declaracion
 
 %%
 
-programa : listaDeclaraciones
+programa : { niv = GLOBAL; dvar = 0; cargaContexto(niv); }
+	listaDeclaraciones
+	{
+		if( $2.v == 0 ) yyerror("El programa no tiene main"); 
+	}
 	;
-listaDeclaraciones : declaracion
+listaDeclaraciones :
+		  declaracion {$$ = $1;}
 		| listaDeclaraciones declaracion
 		;
 
 declaracion : declaracionVariable
 		| declaracionFuncion
 		;
-declaracionVariable : tipoSimple ID_ PUNTCOMA_
+declaracionVariable 
+		: tipoSimple ID_ PUNTCOMA_
+			{
+				if(!insTdS($2, VARIABLE, T_ENTERO, niv, dvar, -1)) 
+					yyerror("Identificador repetido");
+				else dvar += TALLA_TIPO_SIMPLE;
+			}
+
 		| tipoSimple ID_ OCOR_ CTE_ CCOR_ PUNTCOMA_
+			{
+				int numelem = $4;
+				if($4 <= 0) {
+					yyerror("Talla inapropiada del array");
+					numelem = 0;
+				}
+
+				int ref = insTdA($1, numelem);
+				if( !insTdS($2, VARIABLE, T_ARRAY, niv, dvar, ref) ) 
+					yyerror("Identificador repetido");
+				else dvar += numelem * TALLA_TIPO_SIMPLE;
+			}
 		;
-tipoSimple : INT_ 
+tipoSimple : INT_
 	| BOOL_
 		;
-declaracionFuncion : cabeceraFuncion bloque
+declaracionFuncion : 
+			cabeceraFuncion 
+			{
+				$<cent>$ = dvar; 
+				dvar = 0;
+			}
+			bloque
+			{ 
+				descargaContexto(niv); 
+				niv = GLOBAL;
+				dvar = $<cent>2;
+			}
 		;
-cabeceraFuncion : tipoSimple ID_ OPAR_ parametrosFormales CPAR_
+cabeceraFuncion : 
+			tipoSimple ID_ 
+			{ niv++; cargaContexto(niv); } 
+			OPAR_ parametrosFormales CPAR_
 		;
 parametrosFormales : 
 		| listaParametrosFormales
 		; 
 
-listaParametrosFormales : tipoSimple ID_
-		| tipoSimple ID_ COMA_ listaParametrosFormales
+listaParametrosFormales : 
+		  tipoSimple ID_ 
+		  {
+			  int dominio = insTdD(-1, $1);
+		  }
+		| tipoSimple ID_ COMA_ listaParametrosFormales 
+		  {
+
+		  }
 		;
 bloque	: OLLAVE_ declaracionVariableLocal listaInstrucciones RETURN_ expresion PUNTCOMA_ CLLAVE_
 		;
@@ -70,7 +125,32 @@ instruccion : OLLAVE_ listaInstrucciones CLLAVE_
 		| instruccionIteracion
 		;
 instruccionAsignacion : ID_ ASIGNA_ expresion PUNTCOMA_
+			{
+				SIMB sim = obtTdS($1);
+
+				if( sim.t = T_ERROR) yyerror("Objeto no declarado");
+				else if( ! (( sim.t == $3.t == T_ENTERO || 
+							  sim.t == $3.t == T_LOGICO )) )
+					yyerror("Error en la instruccion de asignacion"); 
+
+				else {
+					
+				}
+
+			}
 		| ID_ OCOR_ expresion CCOR_ ASIGNA_ expresion PUNTCOMA_
+		   {
+				SIMB sim = obtTdS($1);
+				if( sim.t = T_ERROR) yyerror("Objeto no declarado");
+				else if(!sim.t == $3.t == T_ARRAY ) 
+					yyerror("El identificador debe ser de tipo 'array'");
+				else if(!$6.t == T_ENTERO)
+					yyerror("El indice del 'array' debe ser entero");
+				else {
+
+				} 
+
+		   }
 		;
 
 instruccionEntradaSalida : READ_ OPAR_ ID_ CPAR_ PUNTCOMA_
@@ -162,31 +242,3 @@ operadorIncremento : INCREMENTO_
 		| DECREMENTO_
 		;
 		
-		
-%%
-/*****************************************************************************/
-int verbosidad = FALSE;                  /* Flag si se desea una traza       */
-
-/*****************************************************************************/
-void yyerror(const char *msg)
-/*  Tratamiento de errores.                                                  */
-{ fprintf(stderr, "\nError en la linea %d: %s\n", yylineno, msg); }
-
-/*****************************************************************************/
-int main(int argc, char **argv) 
-/* Gestiona la linea de comandos e invoca al analizador sintactico-semantico.*/
-{ int i, n=1 ;
-
-  for (i=1; i<argc; ++i)
-    if (strcmp(argv[i], "-v")==0) { verbosidad = TRUE; n++; }
-  if (argc == n+1)
-    if ((yyin = fopen (argv[n], "r")) == NULL) {
-      fprintf (stderr, "El fichero '%s' no es valido\n", argv[n]) ;     
-      fprintf (stderr, "Uso: cmc [-v] fichero\n");
-    } 
-    else yyparse();
-  else fprintf (stderr, "Uso: cmc [-v] fichero\n");
-
-  return (0);
-} 
-/*****************************************************************************/

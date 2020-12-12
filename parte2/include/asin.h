@@ -1,4 +1,4 @@
-/* A Bison parser, made by GNU Bison 3.5.1.  */
+/* A Bison parser, made by GNU Bison 3.7.  */
 
 /* Bison interface for Yacc-like parsers in C
 
@@ -31,8 +31,9 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-/* Undocumented macros, especially those whose name start with YY_,
-   are private implementation details.  Do not rely on them.  */
+/* DO NOT RELY ON FEATURES THAT ARE NOT DOCUMENTED in the manual,
+   especially those whose name start with YY_ or yy_.  They are
+   private implementation details that can be changed or removed.  */
 
 #ifndef YY_YY_ASIN_H_INCLUDED
 # define YY_YY_ASIN_H_INCLUDED
@@ -44,55 +45,71 @@
 extern int yydebug;
 #endif
 
-/* Token type.  */
+/* Token kinds.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
   enum yytokentype
   {
-    CTE_ = 258,
-    SUMA_ = 259,
-    RESTA_ = 260,
-    MULTI_ = 261,
-    DIV_ = 262,
-    ASIGNA_ = 263,
-    MENORQ_ = 264,
-    MAYORQ_ = 265,
-    MENORIG_ = 266,
-    MAYORIG_ = 267,
-    IGUAL_ = 268,
-    DISTINTO_ = 269,
-    INCREMENTO_ = 270,
-    DECREMENTO_ = 271,
-    AND_ = 272,
-    OR_ = 273,
-    NEGACION_ = 274,
-    OPAR_ = 275,
-    CPAR_ = 276,
-    OCOR_ = 277,
-    CCOR_ = 278,
-    OLLAVE_ = 279,
-    CLLAVE_ = 280,
-    PUNTCOMA_ = 281,
-    COMA_ = 282,
-    INT_ = 283,
-    BOOL_ = 284,
-    TRUE_ = 285,
-    FALSE_ = 286,
-    IF_ = 287,
-    ELSE_ = 288,
-    FOR_ = 289,
-    READ_ = 290,
-    PRINT_ = 291,
-    DO_ = 292,
-    WHILE_ = 293,
-    RETURN_ = 294,
-    ID_ = 295
+    YYEMPTY = -2,
+    YYEOF = 0,                     /* "end of file"  */
+    YYerror = 256,                 /* error  */
+    YYUNDEF = 257,                 /* "invalid token"  */
+    CTE_ = 258,                    /* CTE_  */
+    SUMA_ = 259,                   /* SUMA_  */
+    RESTA_ = 260,                  /* RESTA_  */
+    MULTI_ = 261,                  /* MULTI_  */
+    DIV_ = 262,                    /* DIV_  */
+    ASIGNA_ = 263,                 /* ASIGNA_  */
+    MENORQ_ = 264,                 /* MENORQ_  */
+    MAYORQ_ = 265,                 /* MAYORQ_  */
+    MENORIG_ = 266,                /* MENORIG_  */
+    MAYORIG_ = 267,                /* MAYORIG_  */
+    IGUAL_ = 268,                  /* IGUAL_  */
+    DISTINTO_ = 269,               /* DISTINTO_  */
+    INCREMENTO_ = 270,             /* INCREMENTO_  */
+    DECREMENTO_ = 271,             /* DECREMENTO_  */
+    AND_ = 272,                    /* AND_  */
+    OR_ = 273,                     /* OR_  */
+    NEGACION_ = 274,               /* NEGACION_  */
+    OPAR_ = 275,                   /* OPAR_  */
+    CPAR_ = 276,                   /* CPAR_  */
+    OCOR_ = 277,                   /* OCOR_  */
+    CCOR_ = 278,                   /* CCOR_  */
+    OLLAVE_ = 279,                 /* OLLAVE_  */
+    CLLAVE_ = 280,                 /* CLLAVE_  */
+    PUNTCOMA_ = 281,               /* PUNTCOMA_  */
+    COMA_ = 282,                   /* COMA_  */
+    INT_ = 283,                    /* INT_  */
+    BOOL_ = 284,                   /* BOOL_  */
+    TRUE_ = 285,                   /* TRUE_  */
+    FALSE_ = 286,                  /* FALSE_  */
+    IF_ = 287,                     /* IF_  */
+    ELSE_ = 288,                   /* ELSE_  */
+    FOR_ = 289,                    /* FOR_  */
+    READ_ = 290,                   /* READ_  */
+    PRINT_ = 291,                  /* PRINT_  */
+    DO_ = 292,                     /* DO_  */
+    WHILE_ = 293,                  /* WHILE_  */
+    RETURN_ = 294,                 /* RETURN_  */
+    ID_ = 295                      /* ID_  */
   };
+  typedef enum yytokentype yytoken_kind_t;
 #endif
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef int YYSTYPE;
+union YYSTYPE
+{
+#line 12 "src/asin.y"
+
+	char* ident;
+	int cent;
+	EXP exp;
+
+#line 110 "asin.h"
+
+};
+typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
 #endif

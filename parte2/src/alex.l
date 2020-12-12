@@ -63,10 +63,8 @@ print		{ retornar (PRINT_);   }
 do		{ retornar (DO_);   }
 while		{ retornar (WHILE_);   }
 return		{ retornar (RETURN_);   }
-{numero}		{ retornar (CTE_);   }
 {comentario}		{ if (verbosidad) ECHO; }
 {com_multi}		{ if (verbosidad) ECHO; }
-{id}		{ retornar (ID_);   }
 <<EOF>>	{if (verbosidad) {fprintf(stdout, "\n");}return 0;}
 
 
