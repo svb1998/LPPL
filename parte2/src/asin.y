@@ -50,8 +50,7 @@ listaDeclaraciones :
 declaracion : declaracionVariable
 		| declaracionFuncion
 		;
-declaracionVariable 
-		: tipoSimple ID_ PUNTCOMA_
+declaracionVariable : tipoSimple ID_ PUNTCOMA_
 			{
 				if(!insTdS($2, VARIABLE, T_ENTERO, niv, dvar, -1)) 
 					yyerror("Identificador repetido");
@@ -77,20 +76,12 @@ tipoSimple : INT_
 		;
 declaracionFuncion : 
 			cabeceraFuncion 
-			{
-				$<cent>$ = dvar; 
-				dvar = 0;
-			}
+			
 			bloque
-			{ 
-				descargaContexto(niv); 
-				niv = GLOBAL;
-				dvar = $<cent>2;
-			}
+			
 		;
 cabeceraFuncion : 
 			tipoSimple ID_ 
-			{ niv++; cargaContexto(niv); } 
 			OPAR_ parametrosFormales CPAR_
 		;
 parametrosFormales : 
@@ -99,15 +90,11 @@ parametrosFormales :
 
 listaParametrosFormales : 
 		  tipoSimple ID_ 
-		  {
-			  int dominio = insTdD(-1, $1);
-		  }
+		  
 		| tipoSimple ID_ COMA_ listaParametrosFormales 
-		  {
-
-		  }
+		  
 		;
-bloque	: OLLAVE_ declaracionVariableLocal listaInstrucciones RETURN_ expresion PUNTCOMA_ CLLAVE_
+bloque : OLLAVE_ declaracionVariableLocal listaInstrucciones RETURN_ expresion PUNTCOMA_ CLLAVE_
 		;
 
 declaracionVariableLocal : declaracionVariableLocal declaracionVariable
