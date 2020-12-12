@@ -7,6 +7,12 @@
 #include "header.h"
 %}
 
+
+%union {
+	char* ident;
+	int cent;
+}
+
 %token CTE_ 
 %token SUMA_ RESTA_ MULTI_ DIV_ 
 %token ASIGNA_ MENORQ_ MAYORQ_ MENORIG_ MAYORIG_ IGUAL_ DISTINTO_
