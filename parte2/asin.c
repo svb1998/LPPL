@@ -553,12 +553,12 @@ static const yytype_uint8 yyrline[] =
 {
        0,    39,    39,    39,    46,    47,    50,    51,    53,    60,
       74,    75,    78,    84,    87,    88,    92,    94,    97,   100,
-     101,   104,   105,   108,   109,   110,   111,   112,   114,   128,
-     143,   144,   147,   150,   153,   154,   155,   157,   158,   161,
-     162,   165,   166,   169,   170,   173,   174,   177,   178,   179,
-     182,   183,   184,   185,   186,   187,   189,   190,   193,   194,
-     197,   198,   199,   202,   203,   206,   207,   210,   211,   212,
-     213,   216,   217,   219,   220,   223,   224,   225,   228,   229
+     101,   104,   105,   108,   109,   110,   111,   112,   114,   127,
+     147,   148,   151,   154,   157,   158,   159,   161,   162,   165,
+     166,   169,   170,   173,   174,   177,   178,   181,   182,   183,
+     186,   187,   188,   189,   190,   191,   193,   194,   197,   198,
+     201,   202,   203,   206,   207,   210,   211,   214,   215,   216,
+     217,   220,   221,   223,   224,   227,   228,   229,   232,   233
 };
 #endif
 
@@ -1262,7 +1262,7 @@ yyreduce:
   case 8: /* declaracionVariable: tipoSimple ID_ PUNTCOMA_  */
 #line 54 "src/asin.y"
                         {
-				if(!insTdS((yyvsp[-1].ident), VARIABLE, T_ENTERO, niv, dvar, -1)) 
+				if(!insTdS((yyvsp[-1].ident), VARIABLE, (yyvsp[-2].cent), niv, dvar, -1)) 
 					yyerror("Identificador repetido");
 				else dvar += TALLA_TIPO_SIMPLE;
 			}
@@ -1286,43 +1286,77 @@ yyreduce:
 #line 1287 "asin.c"
     break;
 
+  case 10: /* tipoSimple: INT_  */
+#line 74 "src/asin.y"
+                  { (yyval.cent) = T_ENTERO; }
+#line 1293 "asin.c"
+    break;
+
+  case 11: /* tipoSimple: BOOL_  */
+#line 75 "src/asin.y"
+                { (yyval.cent) = T_LOGICO; }
+#line 1299 "asin.c"
+    break;
+
   case 28: /* instruccionAsignacion: ID_ ASIGNA_ expresion PUNTCOMA_  */
 #line 115 "src/asin.y"
                         {
 				SIMB sim = obtTdS((yyvsp[-3].ident));
 
-				if( sim.t = T_ERROR) yyerror("Objeto no declarado");
+				if( sim.t == T_ERROR) yyerror("Objeto no declarado");
 				else if( ! (( sim.t == (yyvsp[-1].exp).t == T_ENTERO || 
 							  sim.t == (yyvsp[-1].exp).t == T_LOGICO )) )
-					yyerror("Error en la instruccion de asignacion"); 
-
+					yyerror("Error de tipos en la 'asignacion'"); 
 				else {
 					
 				}
 
 			}
-#line 1305 "asin.c"
+#line 1316 "asin.c"
     break;
 
   case 29: /* instruccionAsignacion: ID_ OCOR_ expresion CCOR_ ASIGNA_ expresion PUNTCOMA_  */
-#line 129 "src/asin.y"
+#line 128 "src/asin.y"
                    {
 				SIMB sim = obtTdS((yyvsp[-6].ident));
-				if( sim.t = T_ERROR) yyerror("Objeto no declarado");
-				else if(!sim.t == (yyvsp[-4].exp).t == T_ARRAY ) 
+				DIM dim = obtTdA(sim.ref);
+
+				if( sim.t == T_ERROR) yyerror("Objeto no declarado");
+				else if(sim.t != T_ARRAY ) 
 					yyerror("El identificador debe ser de tipo 'array'");
-				else if(!(yyvsp[-1].exp).t == T_ENTERO)
+				else if((yyvsp[-4].exp).t != T_ENTERO)
 					yyerror("El indice del 'array' debe ser entero");
+				else if( ! (( dim.telem == (yyvsp[-1].exp).t == T_ENTERO || 
+							  dim.telem == (yyvsp[-1].exp).t == T_LOGICO )) )
+					yyerror("Error de tipos en la 'asignacion'");
 				else {
 
 				} 
 
 		   }
-#line 1322 "asin.c"
+#line 1338 "asin.c"
+    break;
+
+  case 60: /* constante: CTE_  */
+#line 201 "src/asin.y"
+                     { (yyval.cent) = T_ENTERO; }
+#line 1344 "asin.c"
+    break;
+
+  case 61: /* constante: TRUE_  */
+#line 202 "src/asin.y"
+                        {(yyval.cent) = T_LOGICO;}
+#line 1350 "asin.c"
+    break;
+
+  case 62: /* constante: FALSE_  */
+#line 203 "src/asin.y"
+                         {(yyval.cent) = T_LOGICO;}
+#line 1356 "asin.c"
     break;
 
 
-#line 1326 "asin.c"
+#line 1360 "asin.c"
 
       default: break;
     }

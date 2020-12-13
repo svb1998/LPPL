@@ -29,7 +29,7 @@
 
 
 
-%type <cent> tipoSimple
+%type <cent> tipoSimple 
 %type <cent> operadorLogico operadorIgualdad operadorRelacional
 
 %type <exp> expresion expresionIgualdad expresionAditiva listaDeclaraciones declaracion
@@ -52,7 +52,7 @@ declaracion : declaracionVariable
 		;
 declaracionVariable : tipoSimple ID_ PUNTCOMA_
 			{
-				if(!insTdS($2, VARIABLE, T_ENTERO, niv, dvar, -1)) 
+				if(!insTdS($2, VARIABLE, $1, niv, dvar, -1)) 
 					yyerror("Identificador repetido");
 				else dvar += TALLA_TIPO_SIMPLE;
 			}
@@ -71,8 +71,8 @@ declaracionVariable : tipoSimple ID_ PUNTCOMA_
 				else dvar += numelem * TALLA_TIPO_SIMPLE;
 			}
 		;
-tipoSimple : INT_
-	| BOOL_
+tipoSimple : INT_ { $$ = T_ENTERO; }
+	| BOOL_ { $$ = T_LOGICO; }
 		;
 declaracionFuncion : 
 			cabeceraFuncion 
@@ -115,27 +115,26 @@ instruccionAsignacion : ID_ ASIGNA_ expresion PUNTCOMA_
 			{
 				SIMB sim = obtTdS($1);
 
-				if( sim.t = T_ERROR) yyerror("Objeto no declarado");
+				if( sim.t == T_ERROR) yyerror("Objeto no declarado");
 				else if( ! (( sim.t == $3.t == T_ENTERO || 
 							  sim.t == $3.t == T_LOGICO )) )
-					yyerror("Error en la instruccion de asignacion"); 
-
-				else {
-					
-				}
+					yyerror("Error de tipos en la 'asignacion'"); 
 
 			}
 		| ID_ OCOR_ expresion CCOR_ ASIGNA_ expresion PUNTCOMA_
 		   {
 				SIMB sim = obtTdS($1);
-				if( sim.t = T_ERROR) yyerror("Objeto no declarado");
-				else if(!sim.t == $3.t == T_ARRAY ) 
-					yyerror("El identificador debe ser de tipo 'array'");
-				else if(!$6.t == T_ENTERO)
-					yyerror("El indice del 'array' debe ser entero");
-				else {
+				DIM dim = obtTdA(sim.ref);
 
-				} 
+				if( sim.t == T_ERROR) yyerror("Objeto no declarado");
+				else if(sim.t != T_ARRAY ) 
+					yyerror("El identificador debe ser de tipo 'array'");
+				else if($3.t != T_ENTERO)
+					yyerror("El indice del 'array' debe ser entero");
+				else if( ! (( dim.telem == $6.t == T_ENTERO || 
+							  dim.telem == $6.t == T_LOGICO )) )
+					yyerror("Error de tipos en la 'asignacion'");
+				 
 
 		   }
 		;
@@ -181,6 +180,11 @@ expresionUnaria : expresionSufija
 
 expresionSufija : OPAR_ expresion CPAR_
 		| ID_ operadorIncremento
+			{
+				SIMB sim = obtTdS($1);
+				if(sim.t != T_ENTERO) 
+					yyerror("El identificador debe ser entero");
+			}
 		| ID_ OCOR_ expresion CCOR_
 		| ID_ OPAR_ parametrosActuales CPAR_
 		| ID_
@@ -194,9 +198,9 @@ listaParametrosActuales : expresion
 		| expresion COMA_ listaParametrosActuales
 		; 
 
-constante : 	CTE_
-		| TRUE_
-		| FALSE_
+constante : 	CTE_ { $$ = T_ENTERO; }
+		| TRUE_ {$$ = T_LOGICO;}
+		| FALSE_ {$$ = T_LOGICO;}
 		;
 
 operadorLogico : AND_
