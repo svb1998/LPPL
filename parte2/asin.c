@@ -553,12 +553,12 @@ static const yytype_uint8 yyrline[] =
 {
        0,    39,    39,    39,    46,    47,    50,    51,    53,    60,
       74,    75,    78,    84,    87,    88,    92,    94,    97,   100,
-     101,   104,   105,   108,   109,   110,   111,   112,   114,   127,
-     147,   148,   151,   154,   157,   158,   159,   161,   162,   165,
-     166,   169,   170,   173,   174,   177,   178,   181,   182,   183,
-     186,   187,   188,   189,   190,   191,   193,   194,   197,   198,
-     201,   202,   203,   206,   207,   210,   211,   214,   215,   216,
-     217,   220,   221,   223,   224,   227,   228,   229,   232,   233
+     101,   104,   105,   108,   109,   110,   111,   112,   114,   124,
+     142,   150,   159,   162,   165,   166,   167,   169,   170,   173,
+     174,   177,   178,   181,   182,   185,   186,   189,   190,   191,
+     194,   195,   201,   202,   203,   204,   206,   207,   210,   211,
+     214,   215,   216,   219,   220,   223,   224,   227,   228,   229,
+     230,   233,   234,   236,   237,   240,   241,   242,   245,   246
 };
 #endif
 
@@ -1307,16 +1307,13 @@ yyreduce:
 				else if( ! (( sim.t == (yyvsp[-1].exp).t == T_ENTERO || 
 							  sim.t == (yyvsp[-1].exp).t == T_LOGICO )) )
 					yyerror("Error de tipos en la 'asignacion'"); 
-				else {
-					
-				}
 
 			}
-#line 1316 "asin.c"
+#line 1313 "asin.c"
     break;
 
   case 29: /* instruccionAsignacion: ID_ OCOR_ expresion CCOR_ ASIGNA_ expresion PUNTCOMA_  */
-#line 128 "src/asin.y"
+#line 125 "src/asin.y"
                    {
 				SIMB sim = obtTdS((yyvsp[-6].ident));
 				DIM dim = obtTdA(sim.ref);
@@ -1329,34 +1326,45 @@ yyreduce:
 				else if( ! (( dim.telem == (yyvsp[-1].exp).t == T_ENTERO || 
 							  dim.telem == (yyvsp[-1].exp).t == T_LOGICO )) )
 					yyerror("Error de tipos en la 'asignacion'");
-				else {
-
-				} 
+				 
 
 		   }
-#line 1338 "asin.c"
+#line 1333 "asin.c"
     break;
 
-  case 60: /* constante: CTE_  */
-#line 201 "src/asin.y"
-                     { (yyval.cent) = T_ENTERO; }
+  case 30: /* instruccionEntradaSalida: READ_ OPAR_ ID_ CPAR_ PUNTCOMA_  */
+#line 143 "src/asin.y"
+                        {
+				SIMB sim = obtTdS((yyvsp[-2].ident));
+				if( sim.t == T_ERROR) yyerror("Objeto no declarado");
+				else if ( sim.t != T_ENTERO)
+					yyerror("El argumento del 'read' debe ser 'entero'");
+			}
 #line 1344 "asin.c"
     break;
 
-  case 61: /* constante: TRUE_  */
-#line 202 "src/asin.y"
-                        {(yyval.cent) = T_LOGICO;}
-#line 1350 "asin.c"
+  case 31: /* instruccionEntradaSalida: PRINT_ OPAR_ expresion CPAR_ PUNTCOMA_  */
+#line 152 "src/asin.y"
+                        {
+				if((yyvsp[-2].exp).t != T_ENTERO) {
+					yyerror("La expresion del 'print' debe ser 'entera'");
+				}
+			}
+#line 1354 "asin.c"
     break;
 
-  case 62: /* constante: FALSE_  */
-#line 203 "src/asin.y"
-                         {(yyval.cent) = T_LOGICO;}
-#line 1356 "asin.c"
+  case 51: /* expresionSufija: ID_ operadorIncremento  */
+#line 196 "src/asin.y"
+                        {
+				SIMB sim = obtTdS((yyvsp[-1].ident));
+				if(sim.t != T_ENTERO) 
+					yyerror("El identificador debe ser entero");
+			}
+#line 1364 "asin.c"
     break;
 
 
-#line 1360 "asin.c"
+#line 1368 "asin.c"
 
       default: break;
     }

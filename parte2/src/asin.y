@@ -140,7 +140,20 @@ instruccionAsignacion : ID_ ASIGNA_ expresion PUNTCOMA_
 		;
 
 instruccionEntradaSalida : READ_ OPAR_ ID_ CPAR_ PUNTCOMA_
+			{
+				SIMB sim = obtTdS($3);
+				if( sim.t == T_ERROR) yyerror("Objeto no declarado");
+				else if ( sim.t != T_ENTERO)
+					yyerror("El argumento del 'read' debe ser 'entero'");
+			}
+
 		| PRINT_ OPAR_ expresion CPAR_ PUNTCOMA_
+
+			{
+				if($3.t != T_ENTERO) {
+					yyerror("La expresion del 'print' debe ser 'entera'");
+				}
+			}
 		;
 
 instruccionSeleccion : IF_ OPAR_ expresion CPAR_ instruccion ELSE_ instruccion
@@ -198,9 +211,9 @@ listaParametrosActuales : expresion
 		| expresion COMA_ listaParametrosActuales
 		; 
 
-constante : 	CTE_ { $$ = T_ENTERO; }
-		| TRUE_ {$$ = T_LOGICO;}
-		| FALSE_ {$$ = T_LOGICO;}
+constante : 	CTE_ 
+		| TRUE_ 
+		| FALSE_ 
 		;
 
 operadorLogico : AND_
