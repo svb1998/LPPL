@@ -29,7 +29,7 @@
 
 
 
-%type <cent> tipoSimple 
+%type <cent> tipoSimple  listaParametrosFormales parametrosFormales
 %type <cent> operadorLogico operadorIgualdad operadorRelacional operadorIncremento
 %type <cent> operadorAditivo operadorMultiplicativo operadorUnario
 
@@ -78,23 +78,47 @@ tipoSimple : INT_ { $$ = T_ENTERO; }
 		;
 declaracionFuncion : 
 			cabeceraFuncion 
-			
+			{
+				$<cent>$ = dvar; 
+				dvar = 0;
+			}
 			bloque
-			
+			{ 
+				descargaContexto(niv); 
+				niv--;
+				dvar = $<cent>2;
+			}
+
 		;
 cabeceraFuncion : 
 			tipoSimple ID_ 
+			{ 
+				niv++ ; 
+				cargaContexto(niv); 
+			} 
 			OPAR_ parametrosFormales CPAR_
+			{
+				if(!insTdS($2, FUNCION, $1, niv, dvar, $5)) 
+					yyerror("Identificador de funcion repetido");
+			}
 		;
 parametrosFormales : 
-		| listaParametrosFormales
+		| listaParametrosFormales {$$ = $1;}
 		; 
 
 listaParametrosFormales : 
-		  tipoSimple ID_ 
-		  
+		  	tipoSimple ID_ 
+		  	{
+				int ref = insTdD(-1, $1);
+				if(!insTdS($2, PARAMETRO, $1, niv, dvar, ref))
+					yyerror("Parametro no valido");
+				$$ = ref;
+		  	}	  
 		| tipoSimple ID_ COMA_ listaParametrosFormales 
-		  
+		  	{
+				if(!insTdS($2, PARAMETRO, $1, niv, dvar, $4))
+					yyerror("Parametro no valido");
+			}
 		;
 bloque : OLLAVE_ declaracionVariableLocal listaInstrucciones RETURN_ expresion PUNTCOMA_ CLLAVE_
 		;
@@ -164,6 +188,13 @@ instruccionSeleccion : IF_ OPAR_ expresion CPAR_ instruccion ELSE_ instruccion
 		;
 
 instruccionIteracion : FOR_ OPAR_ expresionOpcional PUNTCOMA_ expresion PUNTCOMA_ expresionOpcional CPAR_ instruccion
+			{
+				if($5.t != T_LOGICO) {
+					yyerror("La expresion del 'for' debe ser 'logica'");
+				} else {
+					yyerror("Prueba");
+				}
+			}
 		;
 
 expresionOpcional : expresion
@@ -395,7 +426,7 @@ expresionSufija : OPAR_ expresion CPAR_ { $$.t = $2.t; $$.v = $2.v; $$.valid = $
 					else
 						$$.t = simb.t; 
 			}
-		| constante
+		| constante {$$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid;}
 		;
 parametrosActuales : listaParametrosActuales
 		|
