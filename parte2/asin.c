@@ -549,16 +549,16 @@ static const yytype_int8 yytranslate[] =
 
 #if YYDEBUG
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
-static const yytype_uint8 yyrline[] =
+static const yytype_int16 yyrline[] =
 {
-       0,    39,    39,    39,    46,    47,    50,    51,    53,    60,
-      74,    75,    78,    84,    87,    88,    92,    94,    97,   100,
-     101,   104,   105,   108,   109,   110,   111,   112,   114,   124,
-     142,   150,   159,   162,   165,   166,   167,   169,   170,   173,
-     174,   177,   178,   181,   182,   185,   186,   189,   190,   191,
-     194,   195,   201,   202,   203,   204,   206,   207,   210,   211,
-     214,   215,   216,   219,   220,   223,   224,   227,   228,   229,
-     230,   233,   234,   236,   237,   240,   241,   242,   245,   246
+       0,    41,    41,    41,    48,    49,    52,    53,    55,    62,
+      76,    77,    80,    86,    89,    90,    94,    96,    99,   102,
+     103,   106,   107,   110,   111,   112,   113,   114,   116,   126,
+     146,   154,   163,   166,   169,   170,   171,   173,   174,   206,
+     207,   229,   230,   255,   256,   278,   279,   314,   315,   346,
+     361,   362,   368,   385,   386,   398,   400,   401,   404,   405,
+     408,   409,   410,   413,   414,   417,   418,   421,   422,   423,
+     424,   427,   428,   430,   431,   434,   435,   436,   439,   440
 };
 #endif
 
@@ -1240,13 +1240,13 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* $@1: %empty  */
-#line 39 "src/asin.y"
+#line 41 "src/asin.y"
            { niv = GLOBAL; dvar = 0; cargaContexto(niv); }
 #line 1246 "asin.c"
     break;
 
   case 3: /* programa: $@1 listaDeclaraciones  */
-#line 41 "src/asin.y"
+#line 43 "src/asin.y"
         {
 		if( (yyvsp[0].exp).v == 0 ) yyerror("El programa no tiene main"); 
 	}
@@ -1254,13 +1254,13 @@ yyreduce:
     break;
 
   case 4: /* listaDeclaraciones: declaracion  */
-#line 46 "src/asin.y"
+#line 48 "src/asin.y"
                               {(yyval.exp) = (yyvsp[0].exp);}
 #line 1260 "asin.c"
     break;
 
   case 8: /* declaracionVariable: tipoSimple ID_ PUNTCOMA_  */
-#line 54 "src/asin.y"
+#line 56 "src/asin.y"
                         {
 				if(!insTdS((yyvsp[-1].ident), VARIABLE, (yyvsp[-2].cent), niv, dvar, -1)) 
 					yyerror("Identificador repetido");
@@ -1270,7 +1270,7 @@ yyreduce:
     break;
 
   case 9: /* declaracionVariable: tipoSimple ID_ OCOR_ CTE_ CCOR_ PUNTCOMA_  */
-#line 61 "src/asin.y"
+#line 63 "src/asin.y"
                         {
 				int numelem = (yyvsp[-2].cent);
 				if((yyvsp[-2].cent) <= 0) {
@@ -1287,19 +1287,19 @@ yyreduce:
     break;
 
   case 10: /* tipoSimple: INT_  */
-#line 74 "src/asin.y"
+#line 76 "src/asin.y"
                   { (yyval.cent) = T_ENTERO; }
 #line 1293 "asin.c"
     break;
 
   case 11: /* tipoSimple: BOOL_  */
-#line 75 "src/asin.y"
+#line 77 "src/asin.y"
                 { (yyval.cent) = T_LOGICO; }
 #line 1299 "asin.c"
     break;
 
   case 28: /* instruccionAsignacion: ID_ ASIGNA_ expresion PUNTCOMA_  */
-#line 115 "src/asin.y"
+#line 117 "src/asin.y"
                         {
 				SIMB sim = obtTdS((yyvsp[-3].ident));
 
@@ -1313,58 +1313,455 @@ yyreduce:
     break;
 
   case 29: /* instruccionAsignacion: ID_ OCOR_ expresion CCOR_ ASIGNA_ expresion PUNTCOMA_  */
-#line 125 "src/asin.y"
+#line 127 "src/asin.y"
                    {
 				SIMB sim = obtTdS((yyvsp[-6].ident));
-				DIM dim = obtTdA(sim.ref);
 
 				if( sim.t == T_ERROR) yyerror("Objeto no declarado");
 				else if(sim.t != T_ARRAY ) 
 					yyerror("El identificador debe ser de tipo 'array'");
 				else if((yyvsp[-4].exp).t != T_ENTERO)
 					yyerror("El indice del 'array' debe ser entero");
-				else if( ! (( dim.telem == (yyvsp[-1].exp).t == T_ENTERO || 
+				else {
+					DIM dim = obtTdA(sim.ref);
+					if( ! (( dim.telem == (yyvsp[-1].exp).t == T_ENTERO || 
 							  dim.telem == (yyvsp[-1].exp).t == T_LOGICO )) )
 					yyerror("Error de tipos en la 'asignacion'");
+				}
 				 
 
 		   }
-#line 1333 "asin.c"
+#line 1335 "asin.c"
     break;
 
   case 30: /* instruccionEntradaSalida: READ_ OPAR_ ID_ CPAR_ PUNTCOMA_  */
-#line 143 "src/asin.y"
+#line 147 "src/asin.y"
                         {
 				SIMB sim = obtTdS((yyvsp[-2].ident));
 				if( sim.t == T_ERROR) yyerror("Objeto no declarado");
 				else if ( sim.t != T_ENTERO)
 					yyerror("El argumento del 'read' debe ser 'entero'");
 			}
-#line 1344 "asin.c"
+#line 1346 "asin.c"
     break;
 
   case 31: /* instruccionEntradaSalida: PRINT_ OPAR_ expresion CPAR_ PUNTCOMA_  */
-#line 152 "src/asin.y"
+#line 156 "src/asin.y"
                         {
 				if((yyvsp[-2].exp).t != T_ENTERO) {
 					yyerror("La expresion del 'print' debe ser 'entera'");
 				}
 			}
-#line 1354 "asin.c"
+#line 1356 "asin.c"
+    break;
+
+  case 37: /* expresion: expresionIgualdad  */
+#line 173 "src/asin.y"
+                              { (yyval.exp).t = (yyvsp[0].exp).t; (yyval.exp).v = (yyvsp[0].exp).v; (yyval.exp).valid = (yyvsp[0].exp).valid; }
+#line 1362 "asin.c"
+    break;
+
+  case 38: /* expresion: expresion operadorLogico expresionIgualdad  */
+#line 176 "src/asin.y"
+                        {
+				(yyval.exp).t = T_ERROR;
+
+				if((yyvsp[-2].exp).t != T_ERROR && (yyvsp[0].exp).t != T_ERROR) {
+					if ((yyvsp[-2].exp).t != (yyvsp[0].exp).t) {
+						yyerror("Error en 'expresion logica'");
+					} else if ((yyvsp[-2].exp).t != T_LOGICO) {
+						yyerror("Operacion logica invalida para no booleanos");
+					} else {
+						(yyval.exp).t = T_LOGICO;
+						if ((yyvsp[-2].exp).valid == TRUE && (yyvsp[0].exp).valid == TRUE) {
+							if ((yyvsp[-1].cent) == OP_AND) {
+								(yyval.exp).v = FALSE;
+								if ((yyvsp[-2].exp).v == TRUE)
+									if ((yyvsp[0].exp).v == TRUE)
+										(yyval.exp).v = TRUE;
+							} else if ((yyvsp[-1].cent) == OP_OR) {
+								(yyval.exp).v = TRUE;
+								if ((yyvsp[-2].exp).v == FALSE)
+									if ((yyvsp[0].exp).v == FALSE)
+										(yyval.exp).v = FALSE;
+							}
+							(yyval.exp).valid = TRUE;
+						} else (yyval.exp).valid = FALSE;
+					}
+				}
+			}
+#line 1394 "asin.c"
+    break;
+
+  case 39: /* expresionIgualdad: expresionRelacional  */
+#line 206 "src/asin.y"
+                                        { (yyval.exp).t = (yyvsp[0].exp).t; (yyval.exp).v = (yyvsp[0].exp).v; (yyval.exp).valid = (yyvsp[0].exp).valid; }
+#line 1400 "asin.c"
+    break;
+
+  case 40: /* expresionIgualdad: expresionIgualdad operadorIgualdad expresionRelacional  */
+#line 208 "src/asin.y"
+                        { 
+				(yyval.exp).t = T_ERROR;
+				if ((yyvsp[-2].exp).t != T_ERROR && (yyvsp[0].exp).t != T_ERROR) {
+					if ((yyvsp[-2].exp).t != (yyvsp[0].exp).t) {
+						yyerror("Tipos no coinciden en operacion de igualdad");
+					} else if ((yyvsp[-2].exp).t == T_ARRAY) {
+						yyerror("Operacion de igualdad no existe para arrays");
+					} else {
+						(yyval.exp).t = T_LOGICO;
+						if ((yyvsp[-2].exp).valid == TRUE && (yyvsp[0].exp).valid == TRUE) {
+							if ((yyvsp[-1].cent) == OP_IGUAL)
+								(yyval.exp).v = (yyvsp[-2].exp).v == (yyvsp[0].exp).v ? TRUE : FALSE;
+							else if ((yyvsp[-1].cent) == OP_NOTIGUAL)
+								(yyval.exp).v = (yyvsp[-2].exp).v != (yyvsp[0].exp).v ? TRUE : FALSE;
+							(yyval.exp).valid = TRUE;
+						} else (yyval.exp).valid = FALSE;
+					}
+				} 
+			}
+#line 1424 "asin.c"
+    break;
+
+  case 41: /* expresionRelacional: expresionAditiva  */
+#line 229 "src/asin.y"
+                                       { (yyval.exp).t = (yyvsp[0].exp).t; (yyval.exp).v = (yyvsp[0].exp).v; (yyval.exp).valid = (yyvsp[0].exp).valid; }
+#line 1430 "asin.c"
+    break;
+
+  case 42: /* expresionRelacional: expresionRelacional operadorRelacional expresionAditiva  */
+#line 231 "src/asin.y"
+                        { (yyval.exp).t = T_ERROR;
+				if ((yyvsp[-2].exp).t != T_ERROR && (yyvsp[0].exp).t != T_ERROR) {
+					if ((yyvsp[-2].exp).t != (yyvsp[0].exp).t) {
+						yyerror("Tipos no coinciden en operacion relacional");
+					} else if ((yyvsp[-2].exp).t == T_LOGICO) {
+						yyerror("Operacion relacional solo acepta argumentos enteros");
+					} else {
+						(yyval.exp).t = T_LOGICO;
+						if ((yyvsp[-2].exp).valid == TRUE && (yyvsp[0].exp).valid == TRUE) {
+							if ((yyvsp[-1].cent) == OP_MAYOR)
+								(yyval.exp).v = (yyvsp[-2].exp).v > (yyvsp[0].exp).v ? TRUE : FALSE;
+							else if ((yyvsp[-1].cent) == OP_MENOR)
+								(yyval.exp).v = (yyvsp[-2].exp).v < (yyvsp[0].exp).v ? TRUE : FALSE;
+							else if ((yyvsp[-1].cent) == OP_MAYORIG)
+								(yyval.exp).v = (yyvsp[-2].exp).v >= (yyvsp[0].exp).v ? TRUE : FALSE;
+							else if ((yyvsp[-1].cent) == OP_MENORIG)
+								(yyval.exp).v = (yyvsp[-2].exp).v <= (yyvsp[0].exp).v ? TRUE : FALSE;
+							(yyval.exp).valid = TRUE;
+						} else (yyval.exp).valid = FALSE;
+					}
+				} 
+			}
+#line 1457 "asin.c"
+    break;
+
+  case 43: /* expresionAditiva: expresionMultiplicativa  */
+#line 255 "src/asin.y"
+                                           { (yyval.exp).t = (yyvsp[0].exp).t; (yyval.exp).v = (yyvsp[0].exp).v; (yyval.exp).valid = (yyvsp[0].exp).valid; }
+#line 1463 "asin.c"
+    break;
+
+  case 44: /* expresionAditiva: expresionAditiva operadorAditivo expresionMultiplicativa  */
+#line 257 "src/asin.y"
+                        { 
+				(yyval.exp).t = T_ERROR;
+				if ((yyvsp[-2].exp).t != T_ERROR && (yyvsp[0].exp).t != T_ERROR) {
+					if ((yyvsp[-2].exp).t != (yyvsp[0].exp).t) {
+						yyerror("Tipos no coinciden en operacion aditiva");
+					} else if ((yyvsp[-2].exp).t != T_ENTERO) {
+						yyerror("Operacion aditiva solo acepta argumentos enteros");
+					} else {
+						(yyval.exp).t = T_ENTERO;
+						if ((yyvsp[-2].exp).valid == TRUE && (yyvsp[0].exp).valid == TRUE) {
+							if ((yyvsp[-1].cent) == OP_SUMA)
+								(yyval.exp).v = (yyvsp[-2].exp).v + (yyvsp[0].exp).v;
+							else if ((yyvsp[-1].cent) == OP_RESTA)
+								(yyval.exp).v = (yyvsp[-2].exp).v - (yyvsp[0].exp).v;
+							(yyval.exp).valid = TRUE;
+						} else (yyval.exp).valid = FALSE;
+					}
+				} 
+			}
+#line 1487 "asin.c"
+    break;
+
+  case 45: /* expresionMultiplicativa: expresionUnaria  */
+#line 278 "src/asin.y"
+                                          { (yyval.exp).t = (yyvsp[0].exp).t; (yyval.exp).v = (yyvsp[0].exp).v; (yyval.exp).valid = (yyvsp[0].exp).valid; }
+#line 1493 "asin.c"
+    break;
+
+  case 46: /* expresionMultiplicativa: expresionMultiplicativa operadorMultiplicativo expresionUnaria  */
+#line 280 "src/asin.y"
+                        { 
+				(yyval.exp).t = T_ERROR;
+				if ((yyvsp[-2].exp).t != T_ERROR && (yyvsp[0].exp).t != T_ERROR) {
+					if ((yyvsp[-2].exp).t != (yyvsp[0].exp).t) {
+						yyerror("Tipos no coinciden en operacion multiplicativa");
+					} else if ((yyvsp[-2].exp).t != T_ENTERO) {
+						yyerror("Operacion multiplicativa solo acepta argumentos enteros");
+					} else {
+						(yyval.exp).t = T_ENTERO;
+						if ((yyvsp[-2].exp).valid == TRUE && (yyvsp[0].exp).valid == TRUE) {
+							if ((yyvsp[-1].cent) == OP_MULT)
+								(yyval.exp).v = (yyvsp[-2].exp).v * (yyvsp[0].exp).v;
+							else if ((yyvsp[-1].cent) == OP_DIV) {
+								if ((yyvsp[0].exp).v == 0) {
+									(yyval.exp).t = T_ERROR;
+									yyerror("Division entre 0");
+								} else {
+									(yyval.exp).v = (yyvsp[-2].exp).v / (yyvsp[0].exp).v;
+								}
+							} else if ((yyvsp[-1].cent) == OP_MOD) {
+								if ((yyvsp[0].exp).v == 0) {
+									(yyval.exp).t = T_ERROR;
+									yyerror("Modulo entre 0");
+								} else {
+									(yyval.exp).v = (yyvsp[-2].exp).v % (yyvsp[0].exp).v;
+								}
+							}
+							(yyval.exp).valid = TRUE;
+						} else (yyval.exp).valid = FALSE;
+					}
+				} 
+			}
+#line 1530 "asin.c"
+    break;
+
+  case 47: /* expresionUnaria: expresionSufija  */
+#line 314 "src/asin.y"
+                                  { (yyval.exp).t = (yyvsp[0].exp).t; (yyval.exp).v = (yyvsp[0].exp).v; (yyval.exp).valid = (yyvsp[0].exp).valid; }
+#line 1536 "asin.c"
+    break;
+
+  case 48: /* expresionUnaria: operadorUnario expresionUnaria  */
+#line 316 "src/asin.y"
+                        { 
+				(yyval.exp).t = T_ERROR;
+				(yyval.exp).valid = (yyvsp[0].exp).valid;
+				if ((yyvsp[0].exp).t != T_ERROR) {
+					if ((yyvsp[0].exp).t == T_ENTERO) {
+						if ((yyvsp[-1].cent) == OP_NOT) {
+							yyerror("Operacion \"!\" invalida en expresion entera");
+						} else if ((yyvsp[0].exp).valid == TRUE) {
+							(yyval.exp).t = T_ENTERO;
+							if ((yyvsp[-1].cent) == OP_MAS) {
+								(yyval.exp).v = (yyvsp[0].exp).v;
+							} else if ((yyvsp[-1].cent) == OP_MENOS) {
+								(yyval.exp).v = - (yyvsp[0].exp).v;
+							}
+						}
+					} else if ((yyvsp[0].exp).t == T_LOGICO) {
+						if ((yyvsp[-1].cent) == OP_NOT) {
+							(yyval.exp).t = T_LOGICO;
+							if ((yyvsp[0].exp).valid == TRUE) {
+								if ((yyvsp[0].exp).v == TRUE)
+									(yyval.exp).v = FALSE;
+								else
+									(yyval.exp).v = TRUE;
+							}
+						} else {
+							yyerror("Operacion entera invalida en expresion logica");
+						}
+					}
+				} 
+			}
+#line 1571 "asin.c"
+    break;
+
+  case 49: /* expresionUnaria: operadorIncremento ID_  */
+#line 347 "src/asin.y"
+                        { 
+				SIMB simb = obtTdS((yyvsp[0].ident));
+
+				(yyval.exp).t = T_ERROR;
+				if (simb.t == T_ERROR)
+					yyerror("Objeto no declarado");
+				else if (simb.t == T_ARRAY)
+					yyerror("El array solo puede ser accedido con indices");
+				else
+					(yyval.exp).t = simb.t;
+				(yyval.exp).valid = FALSE; 
+			}
+#line 1588 "asin.c"
+    break;
+
+  case 50: /* expresionSufija: OPAR_ expresion CPAR_  */
+#line 361 "src/asin.y"
+                                        { (yyval.exp).t = (yyvsp[-1].exp).t; (yyval.exp).v = (yyvsp[-1].exp).v; (yyval.exp).valid = (yyvsp[-1].exp).valid; }
+#line 1594 "asin.c"
     break;
 
   case 51: /* expresionSufija: ID_ operadorIncremento  */
-#line 196 "src/asin.y"
+#line 363 "src/asin.y"
                         {
 				SIMB sim = obtTdS((yyvsp[-1].ident));
 				if(sim.t != T_ENTERO) 
 					yyerror("El identificador debe ser entero");
 			}
-#line 1364 "asin.c"
+#line 1604 "asin.c"
+    break;
+
+  case 52: /* expresionSufija: ID_ OCOR_ expresion CCOR_  */
+#line 369 "src/asin.y"
+                        { 
+				SIMB simb = obtTdS((yyvsp[-3].ident));
+				(yyval.exp).t = T_ERROR;
+				(yyval.exp).valid = FALSE;
+				if (simb.t == T_ERROR)
+					yyerror("Objeto no declarado");
+				else if (simb.t != T_ARRAY)
+					yyerror("La variable no es un array, no puede ser accedida con indices");
+				else {
+					DIM dim = obtTdA(simb.ref);
+					if ((yyvsp[-1].exp).valid == TRUE && ((yyvsp[-1].exp).v < 0 || (yyvsp[-1].exp).v >= dim.nelem))
+						yyerror("Indice no valido");
+					else
+						(yyval.exp).t = dim.telem;
+				} 
+			}
+#line 1625 "asin.c"
+    break;
+
+  case 54: /* expresionSufija: ID_  */
+#line 387 "src/asin.y"
+                        { 	
+				  	SIMB simb = obtTdS((yyvsp[0].ident));
+					(yyval.exp).t = T_ERROR;
+					(yyval.exp).valid = FALSE;
+					if (simb.t == T_ERROR)
+						yyerror("Objeto no declarado");
+					else if (simb.t == T_ARRAY)
+						yyerror("El array solo puede ser accedido con indices");
+					else
+						(yyval.exp).t = simb.t; 
+			}
+#line 1641 "asin.c"
+    break;
+
+  case 60: /* constante: CTE_  */
+#line 408 "src/asin.y"
+                 { (yyval.exp).v = (yyvsp[0].cent); (yyval.exp).t = T_ENTERO; (yyval.exp).valid = TRUE; }
+#line 1647 "asin.c"
+    break;
+
+  case 61: /* constante: TRUE_  */
+#line 409 "src/asin.y"
+                         { (yyval.exp).v = TRUE;     (yyval.exp).t = T_LOGICO; (yyval.exp).valid = TRUE; }
+#line 1653 "asin.c"
+    break;
+
+  case 62: /* constante: FALSE_  */
+#line 410 "src/asin.y"
+                         { (yyval.exp).v = FALSE;    (yyval.exp).t = T_LOGICO; (yyval.exp).valid = TRUE; }
+#line 1659 "asin.c"
+    break;
+
+  case 63: /* operadorLogico: AND_  */
+#line 413 "src/asin.y"
+                      { (yyval.cent) = OP_AND; }
+#line 1665 "asin.c"
+    break;
+
+  case 64: /* operadorLogico: OR_  */
+#line 414 "src/asin.y"
+                      { (yyval.cent) = OP_OR; }
+#line 1671 "asin.c"
+    break;
+
+  case 65: /* operadorIgualdad: IGUAL_  */
+#line 417 "src/asin.y"
+                          { (yyval.cent) = OP_IGUAL; }
+#line 1677 "asin.c"
+    break;
+
+  case 66: /* operadorIgualdad: DISTINTO_  */
+#line 418 "src/asin.y"
+                            { (yyval.cent) = OP_NOTIGUAL; }
+#line 1683 "asin.c"
+    break;
+
+  case 67: /* operadorRelacional: MAYORQ_  */
+#line 421 "src/asin.y"
+                             { (yyval.cent) = OP_MAYOR; }
+#line 1689 "asin.c"
+    break;
+
+  case 68: /* operadorRelacional: MENORQ_  */
+#line 422 "src/asin.y"
+                          { (yyval.cent) = OP_MENOR; }
+#line 1695 "asin.c"
+    break;
+
+  case 69: /* operadorRelacional: MAYORIG_  */
+#line 423 "src/asin.y"
+                           { (yyval.cent) = OP_MAYORIG; }
+#line 1701 "asin.c"
+    break;
+
+  case 70: /* operadorRelacional: MENORIG_  */
+#line 424 "src/asin.y"
+                           { (yyval.cent) = OP_MENORIG; }
+#line 1707 "asin.c"
+    break;
+
+  case 71: /* operadorAditivo: SUMA_  */
+#line 427 "src/asin.y"
+                        { (yyval.cent) = OP_SUMA;}
+#line 1713 "asin.c"
+    break;
+
+  case 72: /* operadorAditivo: RESTA_  */
+#line 428 "src/asin.y"
+                         { (yyval.cent) = OP_RESTA;}
+#line 1719 "asin.c"
+    break;
+
+  case 73: /* operadorMultiplicativo: MULTI_  */
+#line 430 "src/asin.y"
+                                { (yyval.cent) = OP_MULT; }
+#line 1725 "asin.c"
+    break;
+
+  case 74: /* operadorMultiplicativo: DIV_  */
+#line 431 "src/asin.y"
+                       { (yyval.cent) = OP_DIV; }
+#line 1731 "asin.c"
+    break;
+
+  case 75: /* operadorUnario: SUMA_  */
+#line 434 "src/asin.y"
+                       { (yyval.cent) = OP_MAS; }
+#line 1737 "asin.c"
+    break;
+
+  case 76: /* operadorUnario: RESTA_  */
+#line 435 "src/asin.y"
+                         { (yyval.cent) = OP_MENOS; }
+#line 1743 "asin.c"
+    break;
+
+  case 77: /* operadorUnario: NEGACION_  */
+#line 436 "src/asin.y"
+                            { (yyval.cent) = OP_NOT; }
+#line 1749 "asin.c"
+    break;
+
+  case 78: /* operadorIncremento: INCREMENTO_  */
+#line 439 "src/asin.y"
+                                 { (yyval.cent) = OP_INC; }
+#line 1755 "asin.c"
+    break;
+
+  case 79: /* operadorIncremento: DECREMENTO_  */
+#line 440 "src/asin.y"
+                              { (yyval.cent) = OP_DEC; }
+#line 1761 "asin.c"
     break;
 
 
-#line 1368 "asin.c"
+#line 1765 "asin.c"
 
       default: break;
     }
