@@ -30,7 +30,7 @@ int main (int argc, char **argv)
       fprintf (stderr, "Uso: cmc [-v] fichero\n");
     }
     else {        
-      cargaContexto(0);
+      
 
       if (verbosidad == TRUE) fprintf(stdout,"%3d.- ", yylineno);
       yyparse ();
@@ -39,7 +39,7 @@ int main (int argc, char **argv)
       if(verTdS == TRUE)
         mostrarTdS();
 
-      descargaContexto(0);
+      
     }   
   }
   else fprintf (stderr, "Uso: cmc [-v] [-t] fichero\n");

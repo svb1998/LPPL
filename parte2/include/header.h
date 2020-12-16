@@ -63,12 +63,25 @@ extern int verTdS;
 extern int dvar; /* Desplazamiento en el Segmento de Variables */
 extern int niv; /* Nivel de anidamiento "global" o "local" */
 
+int oldvar; //Se usa para guardar el desplazamiento local a cada parte del codigo
+int dpar; //Se usa para gestionar el desplazamiento de los parametros
+int haymain; //Se usa para gestionar que exista un main y solo uno
+
 /************************************************ Struct para las expresions */
 typedef struct exp {
     int v;
     int t;
     int valid;
 } EXP;
+typedef struct param {
+    int ref;
+    int t;
+} PARAM;
+typedef struct aux {
+    int t;
+    int ref;
+    char* id;
+} AUX;
 
 #endif  /* _HEADER_H */
 /*****************************************************************************/
