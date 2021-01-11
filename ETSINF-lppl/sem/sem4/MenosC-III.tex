@@ -1,0 +1,355 @@
+\documentclass[a4paper,footrule,landscape]{foils}
+
+\usepackage{jmbr-traspas}
+\usepackage[latin1]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsmath,hhline,fancybox,pifont}
+\usepackage[noend]{algoritmico}
+\usepackage{epsfig,epic,ecltree,alltt}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% DOCUMENT0
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Definici?n inicial de los bordes 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\rightheader{} \leftheader{} \rightfooter{} \MyLogo{}
+\Restriction{}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Cabecera
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{\vspace{10mm}\textbf{\textcolor{blue}
+   {LENGUAJES DE PROGRAMACIÓN \\
+    Y\\
+   PROCESADORES DE LENGUAJES}}}
+ 
+\author{\vspace{5mm} \mbox{}\\ 
+  {\Large Construcción de un compilador}}
+
+\date{\vspace{10mm}\mbox{}\\
+\textcolor{blue}{\LARGE \texttt{MenosC}}
+\vspace{25mm}\mbox{}\\
+{\Large Parte-III: Generación de Código Intermedio}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\maketitle
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\setcounter{page}{0} 
+\rightfooter{Lenguaje de Programación y Procesadores de
+  Lenguajes~~\textsf{\thepage}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{traspa}{270}{construcción de un compilador}
+
+\vspace{0mm}
+\noindent\textcolor{blue}{\Large Material de prácticas} 
+
+\begin{blistas}{7}{3}
+\item \textcolor{blue}{\texttt{\large Makefile}}. ~Una nueva versión.
+\item \textcolor{blue}{\texttt{\large principal.c}}. ~Una nueva
+  versión en el directorio \texttt{\bf ~src}.
+
+\item \textcolor{blue}{\large \texttt{libgci}} ~Librería para
+  facilitar la tarea de generación de código intermedio.
+
+  \vspace{5mm}\hspace{10mm}%
+  \textcolor{blue}{\texttt{libgci.h}}, ~el fichero de cabecera, en el
+  directorio \texttt{\bf ~include};
+
+  \vspace{5mm}\hspace{10mm}%
+  \textcolor{blue}{\texttt{libgci.a}}, ~la librería, en el directorio
+  \texttt{\bf ~lib}.
+
+\item \textcolor{blue}{\large \texttt{mvm}}.- Máquina virtual
+  que permite ejecutar el código intermedio \texttt{~Malpas}
+
+  Está disponible en el directorio \textbf{bin}.
+
+\item \textcolor{blue}{\large {\em Programas de prueba}} ~En el
+  directorio \textbf{tmp}
+\end{blistas}
+
+\end{traspa}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{traspa}{270}{{\sc Malpas}: inventario de instrucciones}
+
+\vspace{-4mm}
+\begin{tabular}{@{}c@{}c}
+\begin{minipage}[t]{.5\textwidth}
+\centerline{\textcolor{blue}{Operaciones aritméticas}}
+
+\vspace{4mm}
+\begin{footnotesize}
+\begin{tabular}{|c|c|c|c|l|}\hline 
+OP   &arg1&arg2&res&Significado\\\hline\hline 
+ESUM &I/P &I/P &P  &Suma                     \\\hline 
+EDIF &I/P &I/P &P  &Resta                    \\\hline 
+EMULT&I/P &I/P &P  &Multiplicación           \\\hline 
+EDIVI&I/P &I/P &P  &División entera          \\\hline 
+RESTO&I/P &I/P &P  &Resto división entera    \\\hline 
+ESIG &I/P &    &P  &Cambio de signo          \\\hline 
+EASIG&I/P &    &P  &Asignación               \\\hline
+\end{tabular}
+\end{footnotesize}
+
+\vspace{10mm}
+\centerline{\textcolor{blue}{Operaciones de entrada/salida}}
+
+\vspace{4mm}
+\begin{footnotesize}
+\begin{tabular}{|c|c|c|c|p{4cm}|}\hline 
+OP    &arg1&arg2&arg3&Significado\\\hline\hline 
+EREAD &    &    &P   &Lectura  \\\hline 
+EWRITE&    &    &I/P &Escritura\\\hline
+\end{tabular}
+\end{footnotesize}
+\end{minipage}
+&
+\begin{minipage}[t]{.5\textwidth}
+\centerline{\textcolor{blue}{Operaciones de salto}}
+
+\vspace{4mm}
+\begin{footnotesize}
+\begin{tabular}{|c|c|c|c|l|}\hline 
+OP    &arg1&arg2&res&Significado\\\hline\hline 
+GOTOS &    &    &E  &Salto incondicional a E  \\\hline 
+EIGUAL&I/P &I/P &E  &si arg1$=$arg2 salto a E \\\hline 
+EDIST &I/P &I/P &E  &si arg1$<>$arg2 salto a E\\\hline 
+EMEN  &I/P &I/P &E  &si arg1$<$arg2 salto a E \\\hline 
+EMAY  &I/P &I/P &E  &si arg1$>$arg2 salto a E \\\hline 
+EMENEQ&I/P &I/P &E  &si arg1$<=$arg2 salto a E\\\hline 
+EMAYEQ&I/P &I/P &E  &si arg1$>=$arg2 salto a E\\\hline
+FIN   &    &    &   &Fin del programa\\\hline
+\end{tabular}
+\end{footnotesize}
+\end{minipage}
+\end{tabular}
+
+\vspace{10mm} 
+\centerline{\textcolor{blue}{Operaciones con direccionamiento relativo
+    (vectores)}}
+
+\vspace{4mm}
+\begin{footnotesize}
+\begin{tabular}{|c|c|c|c|p{19cm}|}\hline 
+OP &arg1&arg2&res&Significado\\\hline\hline 
+EAV&P   &I/P &P  &Asigna un elemento de un vector a una variable: 
+   $\; res:=arg1[arg2]$\\\hline 
+EVA&P   &I/P &P  &Asigna una variable a un elemento de un vector: 
+   $\; arg1[arg2]:=res$\\\hline
+\end{tabular}
+\end{footnotesize}
+
+\end{traspa}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{traspa}{270}{{\sc Malpas}: inventario de instrucciones}
+
+\vspace{-5mm}
+\centerline{\textcolor{blue}{Operaciones de llamada}}
+%
+\vspace{4mm}
+\begin{center}
+\begin{footnotesize}
+\begin{tabular}{|c|c|c|c|p{8.5cm}|}\hline 
+OP  &arg1&arg2&res&Significado\\\hline\hline 
+FIN &    &    &   &Fin del programa\\\hline 
+RET &    &    &   &Desapila la dirección de retorno y transfiere 
+                   el control a dicha dirección\\\hline 
+CALL&    &    &E  &Apila la dirección de retorno y transfiere el\\
+    &    &    &   &      control a $\,res$\\\hline
+\end{tabular}
+\end{footnotesize}
+\end{center}
+
+\vspace{10mm}
+\centerline{\textcolor{blue}{Operaciones de manejo de pila de RA}}
+%
+\vspace{4mm}
+\begin{center}
+\begin{footnotesize}
+\begin{tabular}{|c|c|c|c|p{9.9cm}|}\hline 
+OP    &arg1&arg2&res&Significado\\\hline\hline 
+EPUSH &    &    &I/P&Apila $\,res\,$ en la cima de la pila\\\hline 
+EPOP  &    &    &P  &Desapila la cima de la pila y la deposita 
+                     en $\,res$\\\hline 
+PUSHFP&    &    &   &Apila el {\sc fp} en la cima de la 
+                     pila \\\hline 
+FPPOP &    &    &   &Desapila la cima y la deposita en el {\sc fp}
+\\\hline
+FPTOP &    &    &   &El {\sc fp} apunta a la misma posición que la cima 
+                     de la pila\\\hline 
+TOPFP &    &    &   &La cima de la pila apunta a la misma posición que
+                     el {\sc fp}\\\hline 
+INCTOP&    &    &I  &Incrementa la cima de la pila en $\,res$ 
+                     posiciones\\\hline 
+DECTOP&    &    &I  &Decrementa la cima de la pila en $\,res$ 
+                     posiciones\\\hline
+\end{tabular}
+\end{footnotesize}
+\end{center}
+
+\end{traspa}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{traspa}{270}{{\sc Malpas}: arquitectura}
+
+\vspace{0mm}
+\footnotesize
+\begin{center}
+\setlength{\unitlength}{5mm}
+\begin{picture}(35,30)
+  \put(13,4){\framebox(11,3){\small Seg.Var.Globales}}
+  \put(13,7){\makebox(11,3){$\ldots$}}
+  \put(13,10){\framebox(11,3){\small Valor de retorno}}
+  \put(13,13){\framebox(11,3){\small Seg. Parámetros}}
+  \put(13,16){\framebox(11,3){\textcolor{blue}{\small Dir. Retorno}}}
+  \put(13,19){\framebox(11,3){\textcolor{blue}{\small Enlaces Control}}}
+  \put(13,22){\framebox(11,3){\small Seg. Var. locales}}
+  \put(13,25){\framebox(11,3){\small Seg. Var. temporales}}
+    \put(8.25,27.8){\makebox{\small \textbf{sp}}} 
+    \put(11,28){\vector(1,0){2}}
+    \put(9.25,21.8) {\makebox{\textbf{fp}}} 
+    \put(11,4){\vector(1,0){2}}
+    \put(4.5,4) {\makebox{\texttt{OrSegGlobal}}} 
+
+    \put(11,22){\vector(1,0){2}}
+    \put(24.5,14){\makebox(10,10){$
+    \left\}\rule[-4mm]{0mm}{50mm}\right.$ {\small RA función actual}}} 
+\end{picture}
+\end{center}
+\normalsize
+
+\end{traspa}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{traspa}{270}{{\sc Generación de Código Intermedio}}
+
+\vspace{-10mm}
+\begin{blistas}{0}{0}
+\item \textcolor{blue}{\large Estructura de la librería \texttt{libgci}}
+
+  Constantes, variables globales y estructuras
+  básicas\hfill (ver Sección \texttt{10.1} del Enunciado)
+
+\item \textcolor{blue}{\large Funciones de para la GCI}
+
+\begin{small}
+\begin{alltt}
+\textcolor{red}{Funciones generales}
+void \textcolor{blue}{emite} (int {\bf cop}, TIPO_ARG {\bf arg1}, TIPO_ARG {\bf arg2}, TIPO_ARG {\bf res});
+int \textcolor{blue}{creaVarTemp} ();
+void \textcolor{blue}{vuelcaCodigo} (char {\bf *nom});
+
+\textcolor{red}{Funciones para crear los argumentos de las instrucciones}
+TIPO_ARG \textcolor{blue}{crArgNul} ();
+TIPO_ARG \textcolor{blue}{crArgEnt} (int {\bf valor});
+TIPO_ARG \textcolor{blue}{crArgEtq} (int {\bf valor});
+TIPO_ARG \textcolor{blue}{crArgPos} (int {\bf valor});
+
+\textcolor{red}{Funciones para la manipulación de las LANS}
+int \textcolor{blue}{creaLans} (int {\bf d});
+int \textcolor{blue}{fusionaLans} (int {\bf x}, int {\bf y});
+void \textcolor{blue}{completaLans} (int {\bf x}, TIPO_ARG {\bf arg});
+\end{alltt}
+\end{small}
+\end{blistas}
+
+\end{traspa}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{traspa}{270}{ejemplo de generación de código}
+
+\vspace{5mm}
+\begin{alltt}
+operadorAditivo
+  : MAS_         \{ \$\$ = ESUM; \}
+  | MENOS_       \{ \$\$ = EDIF; \} ;
+expresionAditiva
+  : expresionMultiplicativa        \{ \$\$ = \$1; \}
+  | expresionAditiva operadorAditivo expresionMultiplicativa
+    \{
+      \$\$.tipo = T\_ERROR;
+      if (\$1.tipo == \$3.tipo == T_ENTERO) \$\$.tipo = T_ENTERO;
+      else yyerror("Error de tipos en la `expresión aditiva'");
+
+      \$\$.pos = creaVarTemp();
+      /*************** Expresión a partir de un operador aritmético */
+      emite(\$2, crArgPos(\$1.pos), crArgPos(\$3.pos), crArgPos(\$\$.pos));
+    \} ;
+\end{alltt}
+
+\end{traspa}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{traspa}{270}{ejemplo de uso}
+
+\vspace{-10mm}
+\begin{blistas}{10}{5}
+\item \textcolor{blue}{\Large Ejemplo de programa de código intermedio}
+
+\vspace{-10mm}
+\begin{alltt}
+// Calcula el factorial de un múmero > 0 y < 13
+//---------------------------------------------
+int factorial (int n)
+\{ int f;
+  if (n <= 1) f=1;
+  else f= n * factorial(n-1);
+  return f;
+\}
+int main ()
+\{ int x;
+  read(x);
+  if (x > 0) 
+    if (x < 13) print(factorial(x)); 
+    else \{\}
+  else \{\}
+  return 0;
+\}
+\end{alltt}
+\end{blistas}
+
+\end{traspa}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{traspa}{270}{ejemplo de GCI}
+
+\vspace{-5mm}
+\begin{scriptsize}
+\begin{center}
+\begin{tabular}
+{|rll@{ , }l@{ , }l|p{5mm}|rll@{ , }l@{ , }l| }\cline{1-5}\cline{7-11}
+  0&INCTOP&             &            &  i:   0    && 30&PUSHFP&             &            &            \\
+  1&GOTOS &             &            &  e:  30    && 31&FPTOP &             &            &            \\
+  2&PUSHFP&             &            &            && 32&INCTOP&             &            &  i:  10    \\
+  3&FPTOP &             &            &            && 33&EREAD &             &            &  p: (1,  0)\\
+  4&INCTOP&             &            &  i:  12    && 34&EASIG &   p: (1,  0)&            &  p: (1,  1)\\
+  5&EASIG &   p: (1, -3)&            &  p: (1,  1)&& 35&EASIG &   i:   0    &            &  p: (1,  2)\\
+  6&EASIG &   i:   1    &            &  p: (1,  2)&& 36&EASIG &   i:   1    &            &  p: (1,  3)\\
+  7&EASIG &   i:   1    &            &  p: (1,  3)&& 37&EMAY  &   p: (1,  1)&  p: (1,  2)&  e:  39    \\
+  8&EMENEQ&   p: (1,  1)&  p: (1,  2)&  e:  10    && 38&EASIG &   i:   0    &            &  p: (1,  3)\\
+  9&EASIG &   i:   0    &            &  p: (1,  3)&& 39&EIGUAL&   p: (1,  3)&  i:   0    &  e:  55    \\
+ 10&EIGUAL&   p: (1,  3)&  i:   0    &  e:  14    && 40&EASIG &   p: (1,  0)&            &  p: (1,  4)\\
+ 11&EASIG &   i:   1    &            &  p: (1,  4)&& 41&EASIG &   i:  13    &            &  p: (1,  5)\\
+ 12&EASIG &   p: (1,  4)&            &  p: (1,  0)&& 42&EASIG &   i:   1    &            &  p: (1,  6)\\
+ 13&GOTOS &             &            &  e:  25    && 43&EMEN  &   p: (1,  4)&  p: (1,  5)&  e:  45    \\
+ 14&EASIG &   p: (1, -3)&            &  p: (1,  5)&& 44&EASIG &   i:   0    &            &  p: (1,  6)\\
+ 15&EPUSH &             &            &  i:   0    && 45&EIGUAL&   p: (1,  6)&  i:   0    &  e:  54    \\
+ 16&EASIG &   p: (1, -3)&            &  p: (1,  6)&& 46&EPUSH &             &            &  i:   0    \\
+ 17&EASIG &   i:   1    &            &  p: (1,  7)&& 47&EASIG &   p: (1,  0)&            &  p: (1,  7)\\
+ 18&EDIF  &   p: (1,  6)&  p: (1,  7)&  p: (1,  8)&& 48&EPUSH &             &            &  p: (1,  7)\\
+ 19&EPUSH &             &            &  p: (1,  8)&& 49&CALL  &             &            &  e:   2    \\
+ 20&CALL  &             &            &  e:   2    && 50&DECTOP&             &            &  i:   1    \\
+ 21&DECTOP&             &            &  i:   1    && 51&EPOP  &             &            &  p: (1,  8)\\
+ 22&EPOP  &             &            &  p: (1,  9)&& 52&EWRITE&             &            &  p: (1,  8)\\
+ 23&EMULT &   p: (1,  5)&  p: (1,  9)&  p: (1, 10)&& 53&GOTOS &             &            &  e:  54    \\
+ 24&EASIG &   p: (1, 10)&            &  p: (1,  0)&& 54&GOTOS &             &            &  e:  55    \\
+ 25&EASIG &   p: (1,  0)&            &  p: (1, 11)&& 55&EASIG &   i:   0    &            &  p: (1,  9)\\
+ 26&EASIG &   p: (1, 11)&            &  p: (1, -4)&& 56&EASIG &   p: (1,  9)&            &  p: (1, -3)\\
+ 27&TOPFP &             &            &            && 57&TOPFP &             &            &            \\
+ 28&FPPOP &             &            &            && 58&FPPOP &             &            &            \\
+ 29&RET   &             &            &            && 59&FIN   &             &            &            \\
+\cline{1-5}\cline{7-11}
+\end{tabular}
+\end{center}
+\end{scriptsize}
+
+\end{traspa}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
