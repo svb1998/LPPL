@@ -4,8 +4,11 @@
 %{
 #include <stdio.h>
 #include <string.h>
+#include "libgci.h"
 #include "header.h"
 #include "libtds.h"
+
+
 %}
 
 
@@ -15,6 +18,7 @@
 	EXP exp;
 	int aux;
 	PARAM param;
+
 }
 
 %token <cent> CTE_ 
@@ -40,7 +44,8 @@
 %type <param> listaParametrosFormales
 
 %type <exp> expresion expresionIgualdad expresionAditiva listaDeclaraciones declaracion constante
-%type <exp> expresionRelacional expresionMultiplicativa expresionUnaria expresionSufija
+%type <exp> expresionRelacional expresionMultiplicativa expresionUnaria expresionSufija instruccionAsignacion
+%type <exp> instruccionEntradaSalida instruccionIteracion instruccionSeleccion
 %%
 
 programa : { 
@@ -187,6 +192,12 @@ instruccionAsignacion : ID_ ASIGNA_ expresion PUNTCOMA_
 							  sim.t == $3.t == T_LOGICO )) )
 					yyerror("Error de tipos en la 'asignacion'"); 
 
+
+			TIPO_ARG id_arg = crArgPos(niv,dvar);
+
+			emite(EASIG,$3.tipo,crArgNul(),id_arg);
+			$$.tipo = id_arg;
+
 			}
 		| ID_ OCOR_ expresion CCOR_ ASIGNA_ expresion PUNTCOMA_
 		   {
@@ -203,7 +214,13 @@ instruccionAsignacion : ID_ ASIGNA_ expresion PUNTCOMA_
 							  dim.telem == $6.t == T_LOGICO )) )
 					yyerror("Error de tipos en la 'asignacion'");
 				}
-				 
+			
+			TIPO_ARG elem = crArgPos(niv,creaVarTemp());
+			TIPO_ARG id = crArgPos(sim.n,sim.d);
+			emite(EASIG, $6.tipo,crArgNul(),elem);
+
+			emite(EVA, id, $3.tipo,elem);
+			$$.tipo = elem;
 
 		   }
 		;
@@ -214,7 +231,13 @@ instruccionEntradaSalida : READ_ OPAR_ ID_ CPAR_ PUNTCOMA_
 				if( sim.t == T_ERROR) yyerror("Objeto no declarado");
 				else if ( sim.t != T_ENTERO)
 					yyerror("El argumento del 'read' debe ser 'entero'");
+
+				TIPO_ARG read = crArgPos(sim.n,sim.d);
+				emite(EREAD,crArgNul(),crArgNul(),read);
+
 			}
+
+
 
 		| PRINT_ OPAR_ expresion CPAR_ PUNTCOMA_
 
@@ -222,24 +245,60 @@ instruccionEntradaSalida : READ_ OPAR_ ID_ CPAR_ PUNTCOMA_
 				if($3.t != T_ENTERO) {
 					yyerror("La expresion del 'print' debe ser 'entera'");
 				}
+				emite(EWRITE,crArgNul(),crArgNul(),$3.tipo);
 			}
 		;
 
-instruccionSeleccion : IF_ OPAR_ expresion CPAR_ instruccion ELSE_ instruccion
+instruccionSeleccion : IF_ OPAR_ expresion CPAR_ 
 		{
 			if($3.t != T_LOGICO){
 				yyerror("La expresion del 'if' debe ser 'logica'");
-			}			
+			}
+			$<exp>$.instr1 = creaLans(si);
+			emite(EIGUAL,$3.tipo,crArgEnt(0),crArgNul());			
+		}
+		instruccion
+		{
+			$<exp>$.instr2 = creaLans(si);
+			emite(GOTOS, crArgNul(),crArgNul(),crArgNul());
+			completaLans($<exp>5.instr1,crArgEtq(si));
+		}
+		ELSE_ instruccion
+		{
+			completaLans($<exp>7.instr2,crArgEtq(si));
 		}
 		;
 
-instruccionIteracion : FOR_ OPAR_ expresionOpcional PUNTCOMA_ expresion PUNTCOMA_ expresionOpcional CPAR_
+instruccionIteracion : FOR_ OPAR_ expresionOpcional PUNTCOMA_
 			{
-				if($5.t != T_LOGICO) {
+				$<exp>$.instr1 = si;
+			}
+			expresion PUNTCOMA_
+			{
+				if($6.t != T_LOGICO) {
 					yyerror("La expresion del 'for' debe ser 'logica'");
 				}
+				$<exp>6.instr1 = creaLans(si);
+
+				emite(EIGUAL,$6.tipo,crArgEnt(0),crArgNul());
+
+				$<exp>6.instr2 = creaLans(si);
+				emite(GOTOS, crArgNul(),crArgNul(),crArgNul());
+
+				$<exp>$.instr2 = si;
+			} 
+			expresionOpcional CPAR_
+			{
+				$<exp>8.instr1 = si;
+				emite(GOTOS,crArgNul(),crArgNul(),crArgEtq($<exp>5.instr1));
+				completaLans($<exp>6.instr2, crArgEtq(si));
 			}
-			 instruccion
+			instruccion
+			{
+				 emite(GOTOS,crArgNul(),crArgNul(),crArgEtq($<exp>8.instr2));
+
+				 completaLans($<exp>6.instr1,crArgEtq(si));
+			}
 
 		;
 
@@ -247,7 +306,7 @@ expresionOpcional : expresion
 		| ID_ ASIGNA_ expresion
 		|
 		;
-expresion : expresionIgualdad { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid; }
+expresion : expresionIgualdad { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid;  $$.tipo = $1.tipo; $$.d = $1.d; }
 		| expresion operadorLogico expresionIgualdad
 
 			{
@@ -276,11 +335,22 @@ expresion : expresionIgualdad { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid; }
 						} else $$.valid = FALSE;
 					}
 				}
+				if($2 == OP_AND){
+					$$.tipo = crArgPos(niv,creaVarTemp());
+					emite(EMULT,$1.tipo,$3.tipo,$$.tipo); 
+				}
+				else if($2 == OP_OR){
+					$$.tipo = crArgPos(niv,creaVarTemp());
+					emite(ESUM,$1.tipo,$3.tipo,$$.tipo);
+					emite(EMENEQ,$$.tipo,crArgEnt(1),crArgEtq(si+2));
+					emite(EASIG,crArgEnt(1),crArgNul(),$$.tipo);
+				}
+				
 			}
 
 		;
 
-expresionIgualdad : expresionRelacional { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid; }
+expresionIgualdad : expresionRelacional { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid; $$.tipo = $1.tipo; $$.d = $1.d;}
 		| expresionIgualdad operadorIgualdad expresionRelacional
 			{ 
 				$$.t = T_ERROR;
@@ -292,18 +362,23 @@ expresionIgualdad : expresionRelacional { $$.t = $1.t; $$.v = $1.v; $$.valid = $
 					} else {
 						$$.t = T_LOGICO;
 						if ($1.valid == TRUE && $3.valid == TRUE) {
-							if ($2 == OP_IGUAL)
+							if ($2 == EIGUAL)
 								$$.v = $1.v == $3.v ? TRUE : FALSE;
-							else if ($2 == OP_NOTIGUAL)
+							else if ($2 == EDIST)
 								$$.v = $1.v != $3.v ? TRUE : FALSE;
 							$$.valid = TRUE;
 						} else $$.valid = FALSE;
 					}
-				} 
+				}
+
+			$$.tipo = crArgPos(niv,creaVarTemp());
+			emite(EASIG,crArgEnt(1),crArgNul(),$$.tipo);
+			emite($2,$1.tipo,$3.tipo,crArgEtq(si+2));
+			emite(EASIG,crArgEnt(0),crArgNul(),$$.tipo);
 			}
 		;
 
-expresionRelacional : expresionAditiva { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid; }
+expresionRelacional : expresionAditiva { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid;  $$.tipo = $1.tipo; $$.d = $1.d; }
 		| expresionRelacional operadorRelacional expresionAditiva
 			{ $$.t = T_ERROR;
 				if ($1.t != T_ERROR && $3.t != T_ERROR) {
@@ -314,22 +389,27 @@ expresionRelacional : expresionAditiva { $$.t = $1.t; $$.v = $1.v; $$.valid = $1
 					} else {
 						$$.t = T_LOGICO;
 						if ($1.valid == TRUE && $3.valid == TRUE) {
-							if ($2 == OP_MAYOR)
+							if ($2 == EMAY)
 								$$.v = $1.v > $3.v ? TRUE : FALSE;
-							else if ($2 == OP_MENOR)
+							else if ($2 == EMEN)
 								$$.v = $1.v < $3.v ? TRUE : FALSE;
-							else if ($2 == OP_MAYORIG)
+							else if ($2 == EMAYEQ)
 								$$.v = $1.v >= $3.v ? TRUE : FALSE;
-							else if ($2 == OP_MENORIG)
+							else if ($2 == EMENEQ)
 								$$.v = $1.v <= $3.v ? TRUE : FALSE;
 							$$.valid = TRUE;
 						} else $$.valid = FALSE;
 					}
 				} 
+			$$.tipo = crArgPos(niv,creaVarTemp());
+			emite(EASIG,crArgEnt(1),crArgNul(),$$.tipo);
+			emite($2,$1.tipo,$3.tipo,crArgEtq(si+2));
+			emite(EASIG,crArgEnt(0),crArgNul(),$$.tipo);
+
 			}
 		;
 
-expresionAditiva : expresionMultiplicativa { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid; }
+expresionAditiva : expresionMultiplicativa { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid;  $$.tipo = $1.tipo; $$.d = $1.d; }
 		| expresionAditiva operadorAditivo expresionMultiplicativa
 			{ 
 				$$.t = T_ERROR;
@@ -341,18 +421,20 @@ expresionAditiva : expresionMultiplicativa { $$.t = $1.t; $$.v = $1.v; $$.valid 
 					} else {
 						$$.t = T_ENTERO;
 						if ($1.valid == TRUE && $3.valid == TRUE) {
-							if ($2 == OP_SUMA)
+							if ($2 == ESUM)
 								$$.v = $1.v + $3.v;
-							else if ($2 == OP_RESTA)
+							else if ($2 == EDIF)
 								$$.v = $1.v - $3.v;
 							$$.valid = TRUE;
 						} else $$.valid = FALSE;
 					}
 				} 
+			$$.d = creaVarTemp();
+			emite($2, crArgPos(niv,$1.d),crArgPos(niv,$3.d),crArgPos(niv,$$.d));
 			}
 		;
 
-expresionMultiplicativa : expresionUnaria { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid; }
+expresionMultiplicativa : expresionUnaria { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid;  $$.tipo = $1.tipo; $$.d = $1.d; }
 		| expresionMultiplicativa operadorMultiplicativo expresionUnaria
 			{ 
 				$$.t = T_ERROR;
@@ -364,9 +446,9 @@ expresionMultiplicativa : expresionUnaria { $$.t = $1.t; $$.v = $1.v; $$.valid =
 					} else {
 						$$.t = T_ENTERO;
 						if ($1.valid == TRUE && $3.valid == TRUE) {
-							if ($2 == OP_MULT)
+							if ($2 == EMULT)
 								$$.v = $1.v * $3.v;
-							else if ($2 == OP_DIV) {
+							else if ($2 == EDIVI) {
 								if ($3.v == 0) {
 									$$.t = T_ERROR;
 									yyerror("Division entre 0");
@@ -384,11 +466,13 @@ expresionMultiplicativa : expresionUnaria { $$.t = $1.t; $$.v = $1.v; $$.valid =
 							$$.valid = TRUE;
 						} else $$.valid = FALSE;
 					}
-				} 
+				}
+			$$.d = creaVarTemp();
+			emite($2, crArgPos(niv,$1.d),crArgPos(niv,$3.d),crArgPos(niv,$$.d)); 
 			}
 		;
 
-expresionUnaria : expresionSufija { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid; }
+expresionUnaria : expresionSufija { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid;  $$.tipo = $1.tipo; $$.d = $1.d; }
 		| operadorUnario expresionUnaria
 			{ 
 				$$.t = T_ERROR;
@@ -407,6 +491,7 @@ expresionUnaria : expresionSufija { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.vali
 						}
 					} else if ($2.t == T_LOGICO) {
 						if ($1 == OP_NOT) {
+						
 							$$.t = T_LOGICO;
 							if ($2.valid == TRUE) {
 								if ($2.v == TRUE)
@@ -414,11 +499,18 @@ expresionUnaria : expresionSufija { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.vali
 								else
 									$$.v = TRUE;
 							}
+							
+							$$.tipo = crArgPos(niv,creaVarTemp());
+							emite(EASIG,crArgEnt(0),crArgNul(),$$.tipo);
+							emite(EDIST,$2.tipo,crArgEnt(0),crArgEtq(si+2));
+							emite(EASIG,crArgEnt(1),crArgNul(),$$.tipo);
+					 
 						} else {
 							yyerror("Operacion entera invalida en expresion logica");
 						}
 					}
-				} 
+				}
+				
 			}
 		| operadorIncremento ID_
 			{ 
@@ -432,7 +524,13 @@ expresionUnaria : expresionSufija { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.vali
 				else
 					$$.t = simb.t;
 				$$.valid = FALSE; 
+
+				$$.tipo = crArgPos(niv,creaVarTemp());
+				TIPO_ARG value = crArgPos(simb.n,simb.d);
+				emite($1,crArgEnt(1),value,$$.tipo);
+
 			}
+
 		;
 
 expresionSufija : OPAR_ expresion CPAR_ { $$.t = $2.t; $$.v = $2.v; $$.valid = $2.valid; }
@@ -441,6 +539,10 @@ expresionSufija : OPAR_ expresion CPAR_ { $$.t = $2.t; $$.v = $2.v; $$.valid = $
 				SIMB sim = obtTdS($1);
 				if(sim.t != T_ENTERO) 
 					yyerror("El identificador debe ser entero");
+				
+				$$.tipo = crArgPos(niv,creaVarTemp());
+				TIPO_ARG value = crArgPos(sim.n,sim.d);
+				emite($1,crArgEnt(1),value,$$.tipo);
 			}
 		| ID_ OCOR_ expresion CCOR_
 			{ 
@@ -458,8 +560,14 @@ expresionSufija : OPAR_ expresion CPAR_ { $$.t = $2.t; $$.v = $2.v; $$.valid = $
 					else
 						$$.t = dim.telem;
 				} 
+				
+				TIPO_ARG indice = $3.tipo;
+				$$.tipo = crArgPos(niv, creaVarTemp());
+				emite(EAV, crArgPos(simb.n, simb.d), indice, $$.tipo);
+
 			}
 		| ID_ OPAR_ parametrosActuales CPAR_
+		
 		| ID_ 
 		  	{ 	
 				  	SIMB simb = obtTdS($1);
@@ -472,7 +580,7 @@ expresionSufija : OPAR_ expresion CPAR_ { $$.t = $2.t; $$.v = $2.v; $$.valid = $
 					else
 						$$.t = simb.t; 
 			}
-		| constante {$$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid;}
+		| constante {$$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid;  $$.tipo = $1.tipo; $$.d = $1.d;}
 		;
 parametrosActuales : listaParametrosActuales
 		|
@@ -491,21 +599,21 @@ operadorLogico : AND_ { $$ = OP_AND; }
 		| OR_ { $$ = OP_OR; }
 		;
 
-operadorIgualdad : IGUAL_ { $$ = OP_IGUAL; }
-		| DISTINTO_ { $$ = OP_NOTIGUAL; }
+operadorIgualdad : IGUAL_ { $$ = EIGUAL; }
+		| DISTINTO_ { $$ = EDIST; }
 		;
 
-operadorRelacional : MAYORQ_ { $$ = OP_MAYOR; }
-		| MENORQ_ { $$ = OP_MENOR; }
-		| MAYORIG_ { $$ = OP_MAYORIG; }
-		| MENORIG_ { $$ = OP_MENORIG; }
+operadorRelacional : MAYORQ_ { $$ = EMAY; }
+		| MENORQ_ { $$ = EMEN; }
+		| MAYORIG_ { $$ = EMAYEQ; }
+		| MENORIG_ { $$ = EMENEQ; }
 		;
 
-operadorAditivo : SUMA_ { $$ = OP_SUMA;}
-		| RESTA_ { $$ = OP_RESTA;}
+operadorAditivo : SUMA_ { $$ = ESUM;}
+		| RESTA_ { $$ = EDIF;}
 		;
-operadorMultiplicativo : MULTI_ { $$ = OP_MULT; }
-		| DIV_ { $$ = OP_DIV; }
+operadorMultiplicativo : MULTI_ { $$ = EMULT; }
+		| DIV_ { $$ = EDIVI; }
 		;
 
 operadorUnario : SUMA_ { $$ = OP_MAS; }
@@ -513,7 +621,7 @@ operadorUnario : SUMA_ { $$ = OP_MAS; }
 		| NEGACION_ { $$ = OP_NOT; }
 		;
 
-operadorIncremento : INCREMENTO_ { $$ = OP_INC; }
-		| DECREMENTO_ { $$ = OP_DEC; }
+operadorIncremento : INCREMENTO_ { $$ = ESUM; }
+		| DECREMENTO_ { $$ = EDIF; }
 		;
 		
