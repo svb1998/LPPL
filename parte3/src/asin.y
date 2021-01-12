@@ -35,7 +35,7 @@
 
 
 
-%type <cent> tipoSimple  cabeceraFuncion parametrosFormales
+%type <cent> tipoSimple cabeceraFuncion parametrosFormales
 %type <cent> operadorLogico operadorIgualdad operadorRelacional operadorIncremento
 %type <cent> operadorAditivo operadorMultiplicativo operadorUnario
 
@@ -53,10 +53,19 @@ programa : {
 		dvar = 0;
 		cargaContexto(niv);
 		haymain = 0;
+
+		$<exp>$.instr1 = creaLans(si);
+		emite(INCTOP,crArgNul(),crArgNul(),crArgNul());
+
+		lansMain = creaLans(si);
+		emite(GOTOS,crArgNul(),crArgNul(),crArgNul());
+		
+
 	 }
 	listaDeclaraciones
 	{
 		if( haymain == 0 ) yyerror("El programa no tiene main"); 
+		completaLans($<exp>1.instr1,crArgEnt(dvar));
 	}
 	;
 listaDeclaraciones :
@@ -94,16 +103,26 @@ tipoSimple : INT_ { $$ = T_ENTERO; }
 declaracionFuncion : 
 			cabeceraFuncion 
 			{
-				//$<cent>$ = dvar; 
-				//dvar = 0;
+				emite(PUSHFP,crArgNul(),crArgNul(),crArgNul());
+				emite(FPTOP,crArgNul(),crArgNul(),crArgNul());
+				$<exp>$.instr1 = creaLans(si);
+				emite(INCTOP,crArgNul(),crArgNul(),crArgNul());
 			}
 			bloque
 			{ 
+				completaLans($<exp>2.instr1,crArgEnt(dvar));
+				emite(TOPFP,crArgNul(),crArgNul(),crArgNul());
+				emite(FPPOP,crArgNul(),crArgNul(),crArgNul());
+
+				emite(RET,crArgNul(),crArgNul(),crArgNul());
+
 				mostrarTdS();
 				descargaContexto(niv); 
 				niv--;
 				//dvar = $<cent>2;
 				dvar = oldvar;
+
+			
 			}
 
 		;
@@ -115,6 +134,7 @@ cabeceraFuncion :
 				oldvar = dvar;
 				dvar = 0;
 				dpar = -TALLA_SEGENLACES;
+				
 			} 
 			OPAR_ parametrosFormales CPAR_
 			{
@@ -125,6 +145,7 @@ cabeceraFuncion :
 				if(strcmp("main",$2)==0){
 					if(haymain ==0){
 						haymain = 1;
+						completaLans(lansMain,crArgEtq(si));
 					}else{
 					yyerror("Hay más de un main");
 				}
@@ -242,6 +263,8 @@ instruccionEntradaSalida : READ_ OPAR_ ID_ CPAR_ PUNTCOMA_
 		| PRINT_ OPAR_ expresion CPAR_ PUNTCOMA_
 
 			{
+				$$.t = T_ENTERO;
+
 				if($3.t != T_ENTERO) {
 					yyerror("La expresion del 'print' debe ser 'entera'");
 				}
@@ -566,7 +589,29 @@ expresionSufija : OPAR_ expresion CPAR_ { $$.t = $2.t; $$.v = $2.v; $$.valid = $
 				emite(EAV, crArgPos(simb.n, simb.d), indice, $$.tipo);
 
 			}
-		| ID_ OPAR_ parametrosActuales CPAR_
+		| ID_ 
+		{
+			SIMB simb = obtTdS($1);
+
+			if (simb.t == T_ERROR)
+				yyerror("Función no declarada");
+			
+
+
+			$<exp>$.tipo = crArgPos(niv, creaVarTemp());
+			emite(INCTOP,crArgNul(),crArgNul(),crArgEnt(simb.t));
+			
+		}
+		OPAR_ parametrosActuales CPAR_
+		{	
+			SIMB simb = obtTdS($1);
+
+			$$.t = simb.t;
+
+			emite(CALL,crArgNul(),crArgNul(),crArgEnt(simb.d));
+			emite(DECTOP,crArgNul(),crArgNul(),crArgEnt(simb.t));
+			emite(EPOP,crArgNul(),crArgNul(),$$.tipo);
+		}
 		
 		| ID_ 
 		  	{ 	
@@ -587,7 +632,14 @@ parametrosActuales : listaParametrosActuales
 		;
 
 listaParametrosActuales : expresion
+		{
+			emite(EPUSH,crArgNul(),crArgNul(),$1.tipo);
+		}
 		| expresion COMA_ listaParametrosActuales
+		{
+			emite(EPUSH,crArgNul(),crArgNul(),$1.tipo);
+
+		}
 		; 
 
 constante : CTE_ { $$.v = $<cent>1; $$.t = T_ENTERO; $$.valid = TRUE; }

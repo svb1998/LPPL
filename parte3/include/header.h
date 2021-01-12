@@ -67,6 +67,7 @@ extern int niv; /* Nivel de anidamiento "global" o "local" */
 int oldvar; //Se usa para guardar el desplazamiento local a cada parte del codigo
 int dpar; //Se usa para gestionar el desplazamiento de los parametros
 int haymain; //Se usa para gestionar que exista un main y solo uno
+int lansMain;
 
 /** Variables externas definidas en las librerı́as **/
 extern int si;
@@ -81,6 +82,7 @@ typedef struct exp {
     int d;
     int instr1;
 	int instr2;
+    int talla;
 } EXP;
 typedef struct param {
     int ref;

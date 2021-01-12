@@ -1,0 +1,16 @@
+  0 INCTOP              ,            ,  i:   0    
+  1 GOTOS               ,            ,            
+  2 PUSHFP              ,            ,            
+  3 FPTOP               ,            ,            
+  4 INCTOP              ,            ,  i:   0    
+  5 EREAD               ,            ,  p: (1,  0)
+  6 EMULT     p: (1,  0),  p: (1,  0),  p: (1,  1)
+  7 EDIF      p: (1,  0),  p: (1,  0),  p: (1,  2)
+  8 ESUM      p: (1,  0),  p: (1,  0),  p: (1,  3)
+  9 EDIVI     p: (1,  0),  p: (1,  0),  p: (1,  4)
+ 10 EMULT     p: (1,  0),  p: (1,  0),  p: (1,  5)
+ 11 EASIG     i:   0    ,            ,  p: (1,  6)
+ 12 EWRITE              ,            ,  i:   0    
+ 13 TOPFP               ,            ,            
+ 14 FPPOP               ,            ,            
+ 15 RET                 ,            ,            
