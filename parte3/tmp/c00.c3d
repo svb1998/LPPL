@@ -1,5 +1,5 @@
   0 INCTOP              ,            ,  i:   0    
-  1 GOTOS               ,            ,  e:  15    
+  1 GOTOS               ,            ,  e:  16    
   2 PUSHFP              ,            ,            
   3 FPTOP               ,            ,            
   4 INCTOP              ,            ,  i:   7    
@@ -10,21 +10,22 @@
   9 EASIG     i:   2    ,            ,  p: (1,  4)
  10 EDIVI     p: (1,  3),  p: (1,  4),  p: (1,  5)
  11 EMULT     p: (1,  5),  p: (1, -3),  p: (1,  6)
- 12 TOPFP               ,            ,            
- 13 FPPOP               ,            ,            
- 14 RET                 ,            ,            
- 15 PUSHFP              ,            ,            
- 16 FPTOP               ,            ,            
- 17 INCTOP              ,            ,  i:   4    
- 18 EREAD               ,            ,  p: (1,  0)
- 19 EPUSH               ,            ,  p: (1,  0)
- 20 CALL                ,            ,  i:  -1    
- 21 DECTOP              ,            ,  i:   1    
- 22 EPOP                ,            ,  p: (1,  1)
- 23 EASIG     p: (1,  1),            ,  p: (1,  2)
- 24 EASIG     p: (1,  2),            ,  p: (1,  0)
- 25 EWRITE              ,            ,  p: (1,  0)
+ 12 GOTOS               ,            ,  e:  15    
+ 13 TOPFP               ,            ,            
+ 14 FPPOP               ,            ,            
+ 15 RET                 ,            ,            
+ 16 PUSHFP              ,            ,            
+ 17 FPTOP               ,            ,            
+ 18 INCTOP              ,            ,  i:   4    
+ 19 EPUSH               ,            ,  i:   0    
+ 20 EASIG     i:   3    ,            ,  p: (1,  1)
+ 21 EPUSH               ,            ,  p: (1,  1)
+ 22 CALL                ,            ,  e:  -1    
+ 23 DECTOP              ,            ,  i:   1    
+ 24 EPOP                ,            ,  p: (1,  2)
+ 25 EWRITE              ,            ,  p: (1,  2)
  26 EASIG     i:   0    ,            ,  p: (1,  3)
- 27 TOPFP               ,            ,            
- 28 FPPOP               ,            ,            
- 29 FIN                 ,            ,            
+ 27 GOTOS               ,            ,  e:  30    
+ 28 TOPFP               ,            ,            
+ 29 FPPOP               ,            ,            
+ 30 FIN                 ,            ,            

@@ -105,14 +105,18 @@ declaracionFuncion :
 			{
 				emite(PUSHFP,crArgNul(),crArgNul(),crArgNul());
 				emite(FPTOP,crArgNul(),crArgNul(),crArgNul());
-				$<exp>$.instr1 = creaLans(si);
+				lansDespFunc = creaLans(si);
 				emite(INCTOP,crArgNul(),crArgNul(),crArgNul());
 			}
 			bloque
 			{ 
-				completaLans($<exp>2.instr1,crArgEnt(dvar));
+				completaLans(lansDespFunc,crArgEnt(dvar));
 				emite(TOPFP,crArgNul(),crArgNul(),crArgNul());
 				emite(FPPOP,crArgNul(),crArgNul(),crArgNul());
+
+				if(lansReturn!=-1){
+					completaLans(lansReturn,crArgEtq(si));
+				}
 
 				if(strcmp($1,"main")==0){
 					emite(FIN,crArgNul(),crArgNul(),crArgNul());
@@ -140,7 +144,7 @@ cabeceraFuncion :
 				oldvar = dvar;
 				dvar = 0;
 				dpar = -TALLA_SEGENLACES;
-				
+				lansReturn = -1;
 			} 
 			OPAR_ parametrosFormales CPAR_
 			{
@@ -194,6 +198,15 @@ listaParametrosFormales :
 			}
 		;
 bloque : OLLAVE_ declaracionVariableLocal listaInstrucciones RETURN_ expresion PUNTCOMA_ CLLAVE_
+		{
+			int lans = creaLans(si);
+			if(lansReturn==-1){
+				lansReturn = lans;
+			} else {
+				lansReturn = fusionaLans(lansReturn, lans);
+			}
+			emite(GOTOS, crArgNul(), crArgNul(), crArgNul());
+		}
 		;
 
 declaracionVariableLocal : declaracionVariableLocal declaracionVariable
@@ -607,7 +620,8 @@ expresionSufija : OPAR_ expresion CPAR_ { $$.t = $2.t; $$.v = $2.v; $$.valid = $
 
 			if (simb.t == T_ERROR)
 				yyerror("Función no declarada");
-			emite(EPUSH,crArgNul(),crArgNul(),crArgEnt(0));
+			$<cent>$ = creaVarTemp();
+			emite(INCTOP,crArgNul(),crArgNul(),crArgEnt(simb.t));
 		}
 		OPAR_ parametrosActuales CPAR_
 		{	
@@ -617,7 +631,7 @@ expresionSufija : OPAR_ expresion CPAR_ { $$.t = $2.t; $$.v = $2.v; $$.valid = $
 				$$.d = creaVarTemp();
 				$$.t = simb.t;
 				printf("%d, %d",simb.d, simb.t);
-				emite(CALL,crArgNul(),crArgNul(),crArgEtq(simb.t));
+				emite(CALL,crArgNul(),crArgNul(),crArgEtq(simb.d));
 				emite(DECTOP,crArgNul(),crArgNul(),crArgEnt(inf.tsp));
 				emite(EPOP,crArgNul(),crArgNul(),crArgPos(niv,$$.d));
 			}

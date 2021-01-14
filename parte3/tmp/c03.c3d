@@ -37,6 +37,7 @@
  36 EWRITE              ,            ,  p: (1, 15)
  37 GOTOS               ,            ,  e:  32    
  38 EASIG     i:   0    ,            ,  p: (1, 16)
- 39 TOPFP               ,            ,            
- 40 FPPOP               ,            ,            
- 41 FIN                 ,            ,            
+ 39 GOTOS               ,            ,  e:  42    
+ 40 TOPFP               ,            ,            
+ 41 FPPOP               ,            ,            
+ 42 FIN                 ,            ,            

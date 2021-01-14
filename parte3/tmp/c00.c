@@ -7,9 +7,8 @@ int func (int a){
 int main ()
 { int a;
 
-  read(a);
-  a = func(a);
-  print(a);
+  print(func(3));
+  
 
   return 0;
 }

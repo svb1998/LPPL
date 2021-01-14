@@ -61,6 +61,7 @@
  60 GOTOS               ,            ,  e:  61    
  61 GOTOS               ,            ,  e:  10    
  62 EASIG     i:   0    ,            ,  p: (1, 27)
- 63 TOPFP               ,            ,            
- 64 FPPOP               ,            ,            
- 65 FIN                 ,            ,            
+ 63 GOTOS               ,            ,  e:  66    
+ 64 TOPFP               ,            ,            
+ 65 FPPOP               ,            ,            
+ 66 FIN                 ,            ,            
