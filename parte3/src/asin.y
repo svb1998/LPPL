@@ -34,8 +34,8 @@
 %token <ident> ID_
 
 
-
-%type <cent> tipoSimple cabeceraFuncion parametrosFormales
+%type <ident> cabeceraFuncion
+%type <cent> tipoSimple  parametrosFormales
 %type <cent> operadorLogico operadorIgualdad operadorRelacional operadorIncremento
 %type <cent> operadorAditivo operadorMultiplicativo operadorUnario
 
@@ -114,7 +114,13 @@ declaracionFuncion :
 				emite(TOPFP,crArgNul(),crArgNul(),crArgNul());
 				emite(FPPOP,crArgNul(),crArgNul(),crArgNul());
 
-				emite(RET,crArgNul(),crArgNul(),crArgNul());
+				if(strcmp($1,"main")==0){
+					emite(FIN,crArgNul(),crArgNul(),crArgNul());
+				}
+				else{
+					emite(RET,crArgNul(),crArgNul(),crArgNul());
+
+				}
 
 				mostrarTdS();
 				descargaContexto(niv); 
@@ -141,7 +147,7 @@ cabeceraFuncion :
 				if(!insTdS($2, FUNCION, $1, niv-1, -1, $5)) {
 					yyerror("Identificador de funcion repetido");
 				}
-				$$ = $5;
+				$$ = $2;
 				if(strcmp("main",$2)==0){
 					if(haymain ==0){
 						haymain = 1;
@@ -213,11 +219,12 @@ instruccionAsignacion : ID_ ASIGNA_ expresion PUNTCOMA_
 							  sim.t == $3.t == T_LOGICO )) )
 					yyerror("Error de tipos en la 'asignacion'"); 
 
-
-			TIPO_ARG id_arg = crArgPos(niv,dvar);
-
-			emite(EASIG,$3.tipo,crArgNul(),id_arg);
-			$$.tipo = id_arg;
+			$$.d = creaVarTemp();
+			
+			
+			emite(EASIG,crArgPos(niv,$3.d),crArgNul(),crArgPos(niv,$$.d));
+			
+			emite(EASIG, crArgPos(niv,$$.d), crArgNul(), crArgPos(niv,sim.d));
 
 			}
 		| ID_ OCOR_ expresion CCOR_ ASIGNA_ expresion PUNTCOMA_
@@ -236,12 +243,12 @@ instruccionAsignacion : ID_ ASIGNA_ expresion PUNTCOMA_
 					yyerror("Error de tipos en la 'asignacion'");
 				}
 			
-			TIPO_ARG elem = crArgPos(niv,creaVarTemp());
-			TIPO_ARG id = crArgPos(sim.n,sim.d);
-			emite(EASIG, $6.tipo,crArgNul(),elem);
+			$$.d = creaVarTemp();
 
-			emite(EVA, id, $3.tipo,elem);
-			$$.tipo = elem;
+			emite(EAV, crArgPos(niv,sim.d), crArgPos(niv,$3.d), crArgPos(niv,$$.d));
+            emite(EASIG, crArgPos(niv,$$.d), crArgPos(niv,$6.d), crArgPos(niv,$$.d));
+			emite(EVA, crArgPos(niv,sim.d), crArgPos(niv,$3.d), crArgPos(niv,$$.d));
+
 
 		   }
 		;
@@ -268,7 +275,7 @@ instruccionEntradaSalida : READ_ OPAR_ ID_ CPAR_ PUNTCOMA_
 				if($3.t != T_ENTERO) {
 					yyerror("La expresion del 'print' debe ser 'entera'");
 				}
-				emite(EWRITE,crArgNul(),crArgNul(),$3.tipo);
+				emite(EWRITE,crArgNul(),crArgNul(),crArgPos(niv,$3.d));
 			}
 		;
 
@@ -278,7 +285,7 @@ instruccionSeleccion : IF_ OPAR_ expresion CPAR_
 				yyerror("La expresion del 'if' debe ser 'logica'");
 			}
 			$<exp>$.instr1 = creaLans(si);
-			emite(EIGUAL,$3.tipo,crArgEnt(0),crArgNul());			
+			emite(EIGUAL,crArgPos(niv,$3.d),crArgEnt(0),crArgNul());			
 		}
 		instruccion
 		{
@@ -303,7 +310,7 @@ instruccionIteracion : FOR_ OPAR_ expresionOpcional PUNTCOMA_
 				}
 				$<exp>6.instr1 = creaLans(si);
 
-				emite(EIGUAL,$6.tipo,crArgEnt(0),crArgNul());
+				emite(EIGUAL,crArgPos(niv,$6.d),crArgEnt(0),crArgNul());
 
 				$<exp>6.instr2 = creaLans(si);
 				emite(GOTOS, crArgNul(),crArgNul(),crArgNul());
@@ -329,7 +336,7 @@ expresionOpcional : expresion
 		| ID_ ASIGNA_ expresion
 		|
 		;
-expresion : expresionIgualdad { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid;  $$.tipo = $1.tipo; $$.d = $1.d; }
+expresion : expresionIgualdad { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid;   $$.d = $1.d; }
 		| expresion operadorLogico expresionIgualdad
 
 			{
@@ -358,22 +365,24 @@ expresion : expresionIgualdad { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid;  
 						} else $$.valid = FALSE;
 					}
 				}
+
+				$$.d = creaVarTemp();
 				if($2 == OP_AND){
-					$$.tipo = crArgPos(niv,creaVarTemp());
-					emite(EMULT,$1.tipo,$3.tipo,$$.tipo); 
+					
+					emite(EMULT,crArgPos(niv,$1.d),crArgPos(niv,$3.d),crArgPos(niv,$$.d)); 
 				}
 				else if($2 == OP_OR){
-					$$.tipo = crArgPos(niv,creaVarTemp());
-					emite(ESUM,$1.tipo,$3.tipo,$$.tipo);
-					emite(EMENEQ,$$.tipo,crArgEnt(1),crArgEtq(si+2));
-					emite(EASIG,crArgEnt(1),crArgNul(),$$.tipo);
+					
+					emite(ESUM,crArgPos(niv,$1.d),crArgPos(niv,$3.d),crArgPos(niv,$$.d));
+					emite(EMENEQ,crArgPos(niv,$$.d),crArgEnt(1),crArgEtq(si+2));
+					emite(EASIG,crArgEnt(1),crArgNul(),crArgPos(niv,$$.d));
 				}
 				
 			}
 
 		;
 
-expresionIgualdad : expresionRelacional { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid; $$.tipo = $1.tipo; $$.d = $1.d;}
+expresionIgualdad : expresionRelacional { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid;  $$.d = $1.d;}
 		| expresionIgualdad operadorIgualdad expresionRelacional
 			{ 
 				$$.t = T_ERROR;
@@ -394,14 +403,14 @@ expresionIgualdad : expresionRelacional { $$.t = $1.t; $$.v = $1.v; $$.valid = $
 					}
 				}
 
-			$$.tipo = crArgPos(niv,creaVarTemp());
-			emite(EASIG,crArgEnt(1),crArgNul(),$$.tipo);
-			emite($2,$1.tipo,$3.tipo,crArgEtq(si+2));
-			emite(EASIG,crArgEnt(0),crArgNul(),$$.tipo);
+			$$.d = creaVarTemp();
+			emite(EASIG,crArgEnt(1),crArgNul(),crArgPos(niv,$$.d));
+			emite($2,crArgPos(niv,$1.d),crArgPos(niv,$3.d),crArgEtq(si+2));
+			emite(EASIG,crArgEnt(0),crArgNul(),crArgPos(niv,$$.d));
 			}
 		;
 
-expresionRelacional : expresionAditiva { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid;  $$.tipo = $1.tipo; $$.d = $1.d; }
+expresionRelacional : expresionAditiva { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid;   $$.d = $1.d; }
 		| expresionRelacional operadorRelacional expresionAditiva
 			{ $$.t = T_ERROR;
 				if ($1.t != T_ERROR && $3.t != T_ERROR) {
@@ -424,15 +433,15 @@ expresionRelacional : expresionAditiva { $$.t = $1.t; $$.v = $1.v; $$.valid = $1
 						} else $$.valid = FALSE;
 					}
 				} 
-			$$.tipo = crArgPos(niv,creaVarTemp());
-			emite(EASIG,crArgEnt(1),crArgNul(),$$.tipo);
-			emite($2,$1.tipo,$3.tipo,crArgEtq(si+2));
-			emite(EASIG,crArgEnt(0),crArgNul(),$$.tipo);
+			$$.d = creaVarTemp();
+			emite(EASIG,crArgEnt(1),crArgNul(),crArgPos(niv,$$.d));
+			emite($2,crArgPos(niv,$1.d),crArgPos(niv,$3.d),crArgEtq(si+2));
+			emite(EASIG,crArgEnt(0),crArgNul(),crArgPos(niv,$$.d));
 
 			}
 		;
 
-expresionAditiva : expresionMultiplicativa { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid;  $$.tipo = $1.tipo; $$.d = $1.d; }
+expresionAditiva : expresionMultiplicativa { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid;   $$.d = $1.d; }
 		| expresionAditiva operadorAditivo expresionMultiplicativa
 			{ 
 				$$.t = T_ERROR;
@@ -457,7 +466,7 @@ expresionAditiva : expresionMultiplicativa { $$.t = $1.t; $$.v = $1.v; $$.valid 
 			}
 		;
 
-expresionMultiplicativa : expresionUnaria { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid;  $$.tipo = $1.tipo; $$.d = $1.d; }
+expresionMultiplicativa : expresionUnaria { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid;   $$.d = $1.d; }
 		| expresionMultiplicativa operadorMultiplicativo expresionUnaria
 			{ 
 				$$.t = T_ERROR;
@@ -491,11 +500,11 @@ expresionMultiplicativa : expresionUnaria { $$.t = $1.t; $$.v = $1.v; $$.valid =
 					}
 				}
 			$$.d = creaVarTemp();
-			emite($2, crArgPos(niv,$1.d),crArgPos(niv,$3.d),crArgPos(niv,$$.d)); 
+			emite($2, crArgPos(niv,$1.d),crArgPos(niv,$3.d),crArgPos(niv,$$.d));
 			}
 		;
 
-expresionUnaria : expresionSufija { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid;  $$.tipo = $1.tipo; $$.d = $1.d; }
+expresionUnaria : expresionSufija { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid;   $$.d = $1.d; }
 		| operadorUnario expresionUnaria
 			{ 
 				$$.t = T_ERROR;
@@ -523,10 +532,10 @@ expresionUnaria : expresionSufija { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.vali
 									$$.v = TRUE;
 							}
 							
-							$$.tipo = crArgPos(niv,creaVarTemp());
-							emite(EASIG,crArgEnt(0),crArgNul(),$$.tipo);
-							emite(EDIST,$2.tipo,crArgEnt(0),crArgEtq(si+2));
-							emite(EASIG,crArgEnt(1),crArgNul(),$$.tipo);
+							$$.d = creaVarTemp();
+							emite(EASIG,crArgEnt(0),crArgNul(),crArgPos(niv,$$.d));
+							emite(EDIST,crArgPos(niv,$2.d),crArgEnt(0),crArgEtq(si+2));
+							emite(EASIG,crArgEnt(1),crArgNul(),crArgPos(niv,$$.d));
 					 
 						} else {
 							yyerror("Operacion entera invalida en expresion logica");
@@ -548,24 +557,24 @@ expresionUnaria : expresionSufija { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.vali
 					$$.t = simb.t;
 				$$.valid = FALSE; 
 
-				$$.tipo = crArgPos(niv,creaVarTemp());
+				$$.d = creaVarTemp();
 				TIPO_ARG value = crArgPos(simb.n,simb.d);
-				emite($1,crArgEnt(1),value,$$.tipo);
+				emite($1,crArgEnt(1),value,crArgPos(niv,$$.d));
 
 			}
 
 		;
 
-expresionSufija : OPAR_ expresion CPAR_ { $$.t = $2.t; $$.v = $2.v; $$.valid = $2.valid; }
+expresionSufija : OPAR_ expresion CPAR_ { $$.t = $2.t; $$.v = $2.v; $$.valid = $2.valid; $$.d = $2.d;}
 		| ID_ operadorIncremento
 			{
 				SIMB sim = obtTdS($1);
 				if(sim.t != T_ENTERO) 
 					yyerror("El identificador debe ser entero");
 				
-				$$.tipo = crArgPos(niv,creaVarTemp());
+				$$.d = creaVarTemp();
 				TIPO_ARG value = crArgPos(sim.n,sim.d);
-				emite($1,crArgEnt(1),value,$$.tipo);
+				emite($2,crArgEnt(1),value,crArgPos(niv,$$.d));
 			}
 		| ID_ OCOR_ expresion CCOR_
 			{ 
@@ -584,9 +593,9 @@ expresionSufija : OPAR_ expresion CPAR_ { $$.t = $2.t; $$.v = $2.v; $$.valid = $
 						$$.t = dim.telem;
 				} 
 				
-				TIPO_ARG indice = $3.tipo;
-				$$.tipo = crArgPos(niv, creaVarTemp());
-				emite(EAV, crArgPos(simb.n, simb.d), indice, $$.tipo);
+				
+				$$.d = creaVarTemp();
+				emite(EAV, crArgPos(simb.n, simb.d), crArgPos(niv,$3.d), crArgPos(niv,$$.d));
 
 			}
 		| ID_ 
@@ -598,19 +607,19 @@ expresionSufija : OPAR_ expresion CPAR_ { $$.t = $2.t; $$.v = $2.v; $$.valid = $
 			
 
 
-			$<exp>$.tipo = crArgPos(niv, creaVarTemp());
+			$<exp>$.d = creaVarTemp();
 			emite(INCTOP,crArgNul(),crArgNul(),crArgEnt(simb.t));
 			
 		}
 		OPAR_ parametrosActuales CPAR_
 		{	
 			SIMB simb = obtTdS($1);
-
+			$$.d = $<exp>2.d;
 			$$.t = simb.t;
 
 			emite(CALL,crArgNul(),crArgNul(),crArgEnt(simb.d));
 			emite(DECTOP,crArgNul(),crArgNul(),crArgEnt(simb.t));
-			emite(EPOP,crArgNul(),crArgNul(),$$.tipo);
+			emite(EPOP,crArgNul(),crArgNul(),crArgPos(niv,$$.d));
 		}
 		
 		| ID_ 
@@ -624,8 +633,10 @@ expresionSufija : OPAR_ expresion CPAR_ { $$.t = $2.t; $$.v = $2.v; $$.valid = $
 						yyerror("El array solo puede ser accedido con indices");
 					else
 						$$.t = simb.t; 
+					
+					$$.d = simb.d;
 			}
-		| constante {$$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid;  $$.tipo = $1.tipo; $$.d = $1.d;}
+		| constante {$$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid; $$.d = $1.d;}
 		;
 parametrosActuales : listaParametrosActuales
 		|
@@ -633,18 +644,25 @@ parametrosActuales : listaParametrosActuales
 
 listaParametrosActuales : expresion
 		{
-			emite(EPUSH,crArgNul(),crArgNul(),$1.tipo);
+			emite(EPUSH,crArgNul(),crArgNul(),crArgPos(niv,$1.d));
 		}
 		| expresion COMA_ listaParametrosActuales
 		{
-			emite(EPUSH,crArgNul(),crArgNul(),$1.tipo);
+			emite(EPUSH,crArgNul(),crArgNul(),crArgPos(niv,$1.d));
 
 		}
 		; 
 
-constante : CTE_ { $$.v = $<cent>1; $$.t = T_ENTERO; $$.valid = TRUE; }
-		| TRUE_  { $$.v = TRUE;     $$.t = T_LOGICO; $$.valid = TRUE; }
-		| FALSE_ { $$.v = FALSE;    $$.t = T_LOGICO; $$.valid = TRUE; }
+constante : CTE_ { $$.v = $<cent>1; $$.t = T_ENTERO;
+					$$.valid = TRUE; $$.d = creaVarTemp();
+					emite(EASIG,crArgEnt($$.v),crArgNul(),crArgPos(niv,$$.d));
+					}
+		| TRUE_  { $$.v = TRUE;     $$.t = T_LOGICO; $$.valid = TRUE; $$.d = creaVarTemp();
+					emite(EASIG,crArgEnt($$.v),crArgNul(),crArgPos(niv,$$.d));
+					}
+		| FALSE_ { $$.v = FALSE;    $$.t = T_LOGICO; $$.valid = TRUE; $$.d = creaVarTemp();
+					emite(EASIG,crArgEnt($$.v),crArgNul(),crArgPos(niv,$$.d));
+					}
 		;
 
 operadorLogico : AND_ { $$ = OP_AND; }
