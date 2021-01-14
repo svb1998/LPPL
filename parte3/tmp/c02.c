@@ -5,12 +5,10 @@ int main ()
 { int x; int y;
 
   x = 4; y = ++x; print(y); print(x);
-  x = 4; 
-  y = x++; print(y); print(x);
+  x = 4; y = x++; print(y); print(x);
 
   x = 4; y = --x; print(y); print(x); 
-  x = 4; 
-  y = x--; print(y); print(x); 
+  x = 4; y = x--; print(y); print(x); 
 
   return 0;
 } 

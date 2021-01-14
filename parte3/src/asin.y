@@ -35,7 +35,7 @@
 
 
 %type <ident> cabeceraFuncion
-%type <cent> tipoSimple  parametrosFormales
+%type <cent> tipoSimple  parametrosFormales listaParametrosActuales parametrosActuales
 %type <cent> operadorLogico operadorIgualdad operadorRelacional operadorIncremento
 %type <cent> operadorAditivo operadorMultiplicativo operadorUnario
 
@@ -45,7 +45,7 @@
 
 %type <exp> expresion expresionIgualdad expresionAditiva listaDeclaraciones declaracion constante
 %type <exp> expresionRelacional expresionMultiplicativa expresionUnaria expresionSufija instruccionAsignacion
-%type <exp> instruccionEntradaSalida instruccionIteracion instruccionSeleccion
+%type <exp> instruccionEntradaSalida instruccionIteracion instruccionSeleccion 
 %%
 
 programa : { 
@@ -245,8 +245,7 @@ instruccionAsignacion : ID_ ASIGNA_ expresion PUNTCOMA_
 			
 			$$.d = creaVarTemp();
 
-			emite(EAV, crArgPos(niv,sim.d), crArgPos(niv,$3.d), crArgPos(niv,$$.d));
-            emite(EASIG, crArgPos(niv,$$.d), crArgPos(niv,$6.d), crArgPos(niv,$$.d));
+            emite(EASIG,  crArgPos(niv,$6.d), crArgNul(), crArgPos(niv,$$.d));
 			emite(EVA, crArgPos(niv,sim.d), crArgPos(niv,$3.d), crArgPos(niv,$$.d));
 
 
@@ -276,6 +275,7 @@ instruccionEntradaSalida : READ_ OPAR_ ID_ CPAR_ PUNTCOMA_
 					yyerror("La expresion del 'print' debe ser 'entera'");
 				}
 				emite(EWRITE,crArgNul(),crArgNul(),crArgPos(niv,$3.d));
+
 			}
 		;
 
@@ -547,7 +547,7 @@ expresionUnaria : expresionSufija { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.vali
 		| operadorIncremento ID_
 			{ 
 				SIMB simb = obtTdS($2);
-
+				
 				$$.t = T_ERROR;
 				if (simb.t == T_ERROR)
 					yyerror("Objeto no declarado");
@@ -559,7 +559,8 @@ expresionUnaria : expresionSufija { $$.t = $1.t; $$.v = $1.v; $$.valid = $1.vali
 
 				$$.d = creaVarTemp();
 				TIPO_ARG value = crArgPos(simb.n,simb.d);
-				emite($1,crArgEnt(1),value,crArgPos(niv,$$.d));
+				emite($1,value,crArgEnt(1),crArgPos(niv,$$.d));
+				emite(EASIG,crArgPos(niv,$$.d), crArgNul(),value);
 
 			}
 
@@ -572,9 +573,11 @@ expresionSufija : OPAR_ expresion CPAR_ { $$.t = $2.t; $$.v = $2.v; $$.valid = $
 				if(sim.t != T_ENTERO) 
 					yyerror("El identificador debe ser entero");
 				
+				$$.t = sim.t;
 				$$.d = creaVarTemp();
 				TIPO_ARG value = crArgPos(sim.n,sim.d);
-				emite($2,crArgEnt(1),value,crArgPos(niv,$$.d));
+				emite($2,value,crArgEnt(0),crArgPos(niv,$$.d));
+				emite($2,value,crArgEnt(1),value);
 			}
 		| ID_ OCOR_ expresion CCOR_
 			{ 
@@ -604,22 +607,20 @@ expresionSufija : OPAR_ expresion CPAR_ { $$.t = $2.t; $$.v = $2.v; $$.valid = $
 
 			if (simb.t == T_ERROR)
 				yyerror("Función no declarada");
-			
-
-
-			$<exp>$.d = creaVarTemp();
-			emite(INCTOP,crArgNul(),crArgNul(),crArgEnt(simb.t));
-			
+			emite(EPUSH,crArgNul(),crArgNul(),crArgEnt(0));
 		}
 		OPAR_ parametrosActuales CPAR_
 		{	
 			SIMB simb = obtTdS($1);
-			$$.d = $<exp>2.d;
-			$$.t = simb.t;
-
-			emite(CALL,crArgNul(),crArgNul(),crArgEnt(simb.d));
-			emite(DECTOP,crArgNul(),crArgNul(),crArgEnt(simb.t));
-			emite(EPOP,crArgNul(),crArgNul(),crArgPos(niv,$$.d));
+			if(cmpDom(simb.ref,$4)==1){
+				INF inf = obtTdD(simb.ref);
+				$$.d = creaVarTemp();
+				$$.t = simb.t;
+				printf("%d, %d",simb.d, simb.t);
+				emite(CALL,crArgNul(),crArgNul(),crArgEtq(simb.t));
+				emite(DECTOP,crArgNul(),crArgNul(),crArgEnt(inf.tsp));
+				emite(EPOP,crArgNul(),crArgNul(),crArgPos(niv,$$.d));
+			}
 		}
 		
 		| ID_ 
@@ -638,16 +639,19 @@ expresionSufija : OPAR_ expresion CPAR_ { $$.t = $2.t; $$.v = $2.v; $$.valid = $
 			}
 		| constante {$$.t = $1.t; $$.v = $1.v; $$.valid = $1.valid; $$.d = $1.d;}
 		;
-parametrosActuales : listaParametrosActuales
-		|
+parametrosActuales : 
+listaParametrosActuales
+		|{ $$ = insTdD(-1,T_VACIO);}
 		;
 
 listaParametrosActuales : expresion
 		{
+			$$ = insTdD(-1,$1.t);
 			emite(EPUSH,crArgNul(),crArgNul(),crArgPos(niv,$1.d));
 		}
 		| expresion COMA_ listaParametrosActuales
 		{
+			$$ = insTdD($3,$1.t);
 			emite(EPUSH,crArgNul(),crArgNul(),crArgPos(niv,$1.d));
 
 		}
