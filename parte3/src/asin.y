@@ -148,7 +148,7 @@ cabeceraFuncion :
 			} 
 			OPAR_ parametrosFormales CPAR_
 			{
-				if(!insTdS($2, FUNCION, $1, niv-1, -1, $5)) {
+				if(!insTdS($2, FUNCION, $1, niv-1, si, $5)) {
 					yyerror("Identificador de funcion repetido");
 				}
 				$$ = $2;
@@ -199,13 +199,16 @@ listaParametrosFormales :
 		;
 bloque : OLLAVE_ declaracionVariableLocal listaInstrucciones RETURN_ expresion PUNTCOMA_ CLLAVE_
 		{
+
 			int lans = creaLans(si);
 			if(lansReturn==-1){
 				lansReturn = lans;
 			} else {
 				lansReturn = fusionaLans(lansReturn, lans);
 			}
-			emite(GOTOS, crArgNul(), crArgNul(), crArgNul());
+			INF f = obtTdD(-1);
+            int dvret = TALLA_SEGENLACES + f.tsp + TALLA_TIPO_SIMPLE;
+            emite(EASIG, crArgPos(niv, $5.d), crArgNul(), crArgPos(niv, -dvret));
 		}
 		;
 
